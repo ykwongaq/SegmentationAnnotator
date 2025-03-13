@@ -1,7 +1,13 @@
+import { Core } from "./core.js";
+import { ImageSelector } from "./imageSelector.js";
+import { FileDialogRequest, CreateProjectRequest } from "../requests/index.js";
+import { GeneralPopManager, LoadingPopManager } from "../util/index.js";
+import { NavigationBar, ConfigPage, DropArea } from "./panels/index.js";
+
 /**
  * PreprocessPage class
  */
-class PreprocessPage {
+export class PreprocessPage {
     constructor() {
         // Home Button
         this.backMainPageButton = document.getElementById(
@@ -181,9 +187,12 @@ class PreprocessPage {
             this.disableNavigationButton();
 
             const fileDialogRequest = new FileDialogRequest();
-            fileDialogRequest.setTitle("Save SAT Project File");
-            fileDialogRequest.addFileType("SAT Project File", "*.sat");
-            fileDialogRequest.setDefaultExt(".sat");
+            fileDialogRequest.setTitle("Save CoralSCOP-LAT Project File");
+            fileDialogRequest.addFileType(
+                "CoralSCOP-LAT Project File",
+                "*.coral"
+            );
+            fileDialogRequest.setDefaultExt(".coral");
 
             // Ask user to select the project folder
             const core = new Core();
@@ -226,6 +235,9 @@ class PreprocessPage {
                     const image_url = imageDom.src;
                     createProjectRequest.addInput(image_url, selectedImageName);
                 }
+
+                const config = this.configPage.getConfig();
+                createProjectRequest.setConfig(config);
 
                 core.createProject(createProjectRequest);
             });

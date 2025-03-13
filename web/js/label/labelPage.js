@@ -1,7 +1,21 @@
-class LabelPage {
+import { Core } from "./core.js";
+import { Canvas } from "./canvas.js";
+import { ActionManager } from "./action/actionManager.js";
+import { GeneralPopManager } from "../util/index.js";
+
+import {
+    LabelPanel,
+    TopPanel,
+    ActionPanel,
+    ViewPanel,
+    NavigationBar,
+    GalleryPage,
+    StatisticPage,
+} from "./panels/index.js";
+
+export class LabelPage {
     constructor() {
-        // Init core
-        const core = new Core();
+        this.core = new Core();
     }
 
     init() {
@@ -45,15 +59,16 @@ class LabelPage {
         const galleryPage = new GalleryPage(galleryPageDom);
         galleryPage.init();
 
+        // Statistic Page
+        const statisticPageDom = document.getElementById(
+            NavigationBar.STATISTIC_PAGE
+        );
+        const statisticPage = new StatisticPage(statisticPageDom);
+        statisticPage.init();
+
         // Action Manager
         const actionManager = new ActionManager();
     }
-}
-
-async function saveProject() {
-    const core = new Core();
-    await core.save()();
-    await eel.on_close()();
 }
 
 function main() {

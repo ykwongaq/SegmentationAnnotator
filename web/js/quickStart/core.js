@@ -2,19 +2,13 @@ import { Record, HistoryManager } from "./historyManager.js";
 import { Canvas } from "./canvas.js";
 import { MaskSelector } from "./maskSelector.js";
 import { MaskCreator } from "./maskCreator.js";
-import { FileDialogRequest } from "../requests/index.js";
+import { FileDialogRequest, CreateProjectRequest } from "../requests/index.js";
 import { AnnotationRenderer } from "./annotationRenderer.js";
 
 import { Data, CategoryManager } from "./data/index.js";
 
-import {
-    ActionPanel,
-    LabelPanel,
-    TopPanel,
-    GalleryPage,
-    StatisticPage,
-    NavigationBar,
-} from "./panels/index.js";
+import { LabelPanel } from "./panels/index.js";
+import { ActionPanel, TopPanel, NavigationBar } from "./panels/index.js";
 
 import { ErrorPopManager, LoadingPopManager } from "../util/index.js";
 
@@ -34,6 +28,7 @@ export class Core {
         this.dataHistoryManager = null;
 
         this.dataModified = false;
+        this.quadrat = null;
 
         return this;
     }
@@ -111,115 +106,25 @@ export class Core {
             });
     }
 
-    loadProject(filePath = null, callBack = null, errorCallBack = null) {
-        const navigationBar = new NavigationBar();
-        navigationBar.disable();
+    quickStart(imageUrl, imageName, callback = null, errorCallBack = null) {
+        const createProjectRequest = new CreateProjectRequest();
+        createProjectRequest.setOutputPath(null);
+        createProjectRequest.setConfig(null);
+        createProjectRequest.setNeedSegmentation(false);
+        createProjectRequest.addInput(imageUrl, imageName);
 
-        const loadProject_ = (filePath_, callBack_) => {
-            const loadingPopManager = new LoadingPopManager();
-            loadingPopManager.clear();
-            loadingPopManager.updateLargeText("Loading project...");
-            loadingPopManager.updateText("Please wait...");
-            loadingPopManager.show();
-
-            eel.load_project(filePath_)()
-                .then((galleryDataList) => {
-                    eel.get_current_data()()
-                        .then((response) => {
-                            loadingPopManager.hide();
-
-                            // Update the category information
-                            const categoryManager = new CategoryManager();
-                            categoryManager.updateCategoryList(
-                                response["category_info"]
-                            );
-                            categoryManager.updateStatus(
-                                response["status_info"]
-                            );
-
-                            const galleryPage = new GalleryPage();
-                            galleryPage.updateGallery(galleryDataList);
-
-                            const data = Data.parseResponse(response);
-                            this.setData(data);
-
-                            this.dataHistoryManager = new HistoryManager(
-                                Core.DEFAULT_HISTORY_SIZE
-                            );
-                            this.showData();
-
-                            navigationBar.showPage(
-                                NavigationBar.ANNOTATION_PAGE
-                            );
-
-                            navigationBar.enable();
-
-                            if (callBack_ != null) {
-                                callBack_();
-                            }
-                        })
-                        .catch((error) => {
-                            loadingPopManager.hide();
-                            if (errorCallBack != null) {
-                                errorCallBack(error);
-                            }
-                            this.popUpError(error);
-                        });
-                })
-                .catch((error) => {
-                    loadingPopManager.hide();
-                    if (errorCallBack != null) {
-                        errorCallBack(error);
-                    }
-                    this.popUpError(error);
-                });
-        };
-
-        if (filePath === null) {
-            const fileDialogRequest = new FileDialogRequest();
-            fileDialogRequest.setTitle("Save CoralSCOP-LAT Project File");
-            fileDialogRequest.addFileType(
-                "CoralSCOP-LAT Project File",
-                "*.coral"
-            );
-            this.selectFile(
-                fileDialogRequest,
-                (filePath_) => {
-                    if (filePath_ === null) {
-                        navigationBar.enable();
-                        navigateTo("main_page.html");
-                        return;
-                    }
-                    loadProject_(filePath_, callBack);
-                },
-                (error) => {
-                    if (errorCallBack != null) {
-                        errorCallBack(error);
-                    } else {
-                        const errorPopManager = new ErrorPopManager();
-                        errorPopManager.clear();
-                        errorPopManager.updateLargeText("Error");
-                        errorPopManager.updateText(
-                            `Please re-launch the application. Or report the issue to the developer via <a href="${Core.ISSUE_URL}" target="_blank">Github</a>`
-                        );
-                        errorPopManager.addButton("OK", "OK", () => {
-                            errorPopManager.hide();
-                            navigateTo("main_page.html");
-                        });
-
-                        let errorMsg =
-                            "Error Message:\n\n" +
-                            error.errorText +
-                            "\n\n" +
-                            error.errorTraceback;
-                        errorPopManager.updateTextBox(errorMsg);
-                        errorPopManager.show();
-                    }
+        eel.create_project(createProjectRequest.toJson())()
+            .then(() => {
+                if (callback) {
+                    callback();
                 }
-            );
-        } else {
-            loadProject_(filePath, callBack);
-        }
+            })
+            .catch((error) => {
+                if (errorCallBack) {
+                    errorCallBack(error);
+                }
+                this.popUpError(error);
+            });
     }
 
     setData(data) {
@@ -291,115 +196,6 @@ export class Core {
                 }
                 this.popUpError(error);
             });
-    }
-
-    nextData(callBack = null, errorCallBack = null) {
-        this.save(() => {
-            eel.get_next_data()()
-                .then((response) => {
-                    if (response === null) {
-                        alert("Failed to load next data");
-                        return;
-                    }
-
-                    // Clear all selected masks
-                    const maskSelector = new MaskSelector();
-                    maskSelector.clearSelection();
-
-                    // Clear all prompting masks
-                    const maskCreator = new MaskCreator();
-                    maskCreator.clearPrompts();
-
-                    this.setData(Data.parseResponse(response));
-
-                    this.dataHistoryManager = new HistoryManager(
-                        Core.DEFAULT_HISTORY_SIZE
-                    );
-                    this.showData();
-
-                    if (callBack != null) {
-                        callBack();
-                    }
-                })
-                .catch((error) => {
-                    if (errorCallBack != null) {
-                        errorCallBack(error);
-                    }
-                    this.popUpError(error);
-                });
-        });
-    }
-
-    prevData(callBack = null, errorCallBack = null) {
-        this.save(() => {
-            eel.get_prev_data()()
-                .then((response) => {
-                    if (response === null) {
-                        alert("Failed to load previous data");
-                        return;
-                    }
-
-                    // Clear all selected masks
-                    const maskSelector = new MaskSelector();
-                    maskSelector.clearSelection();
-
-                    // Clear all prompting masks
-                    const maskCreator = new MaskCreator();
-                    maskCreator.clearPrompts();
-
-                    this.setData(Data.parseResponse(response));
-                    this.dataHistoryManager = new HistoryManager(
-                        Core.DEFAULT_HISTORY_SIZE
-                    );
-                    this.showData();
-
-                    if (callBack != null) {
-                        callBack();
-                    }
-                })
-                .catch((error) => {
-                    if (errorCallBack != null) {
-                        errorCallBack(error);
-                    }
-                    this.popUpError(error);
-                });
-        });
-    }
-
-    jumpData(idx, callBack = null, errorCallBack = null) {
-        this.save(() => {
-            eel.get_data_by_idx(idx)()
-                .then((response) => {
-                    if (response === null) {
-                        alert("Failed to load data");
-                        return;
-                    }
-
-                    // Clear all selected masks
-                    const maskSelector = new MaskSelector();
-                    maskSelector.clearSelection();
-
-                    // Clear all prompting masks
-                    const maskCreator = new MaskCreator();
-                    maskCreator.clearPrompts();
-
-                    this.setData(Data.parseResponse(response));
-                    this.dataHistoryManager = new HistoryManager(
-                        Core.DEFAULT_HISTORY_SIZE
-                    );
-                    this.showData();
-
-                    if (callBack != null) {
-                        callBack();
-                    }
-                })
-                .catch((error) => {
-                    if (errorCallBack != null) {
-                        errorCallBack(error);
-                    }
-                    this.popUpError(error);
-                });
-        });
     }
 
     showData() {
@@ -697,5 +493,151 @@ export class Core {
         errorPopManager.updateTextBox(errorMsg);
         errorPopManager.show();
         console.error(error);
+    }
+
+    loadProject(filePath = null, callBack = null, errorCallBack = null) {
+        const navigationBar = new NavigationBar();
+        navigationBar.disable();
+
+        const loadProject_ = (filePath_, callBack_) => {
+            const loadingPopManager = new LoadingPopManager();
+            loadingPopManager.clear();
+            loadingPopManager.updateLargeText("Loading project...");
+            loadingPopManager.updateText("Please wait...");
+            loadingPopManager.show();
+
+            eel.load_project(filePath_)()
+                .then((galleryDataList) => {
+                    eel.get_current_data()()
+                        .then((response) => {
+                            loadingPopManager.hide();
+
+                            // Update the category information
+                            const categoryManager = new CategoryManager();
+                            categoryManager.updateCategoryList(
+                                response["category_info"]
+                            );
+                            categoryManager.updateStatus(
+                                response["status_info"]
+                            );
+
+                            const data = Data.parseResponse(response);
+                            this.setData(data);
+
+                            this.dataHistoryManager = new HistoryManager(
+                                Core.DEFAULT_HISTORY_SIZE
+                            );
+                            this.showData();
+
+                            navigationBar.showPage(
+                                NavigationBar.ANNOTATION_PAGE
+                            );
+
+                            navigationBar.enable();
+
+                            if (callBack_ != null) {
+                                callBack_();
+                            }
+                        })
+                        .catch((error) => {
+                            loadingPopManager.hide();
+                            if (errorCallBack != null) {
+                                errorCallBack(error);
+                            }
+                            this.popUpError(error);
+                        });
+                })
+                .catch((error) => {
+                    loadingPopManager.hide();
+                    if (errorCallBack != null) {
+                        errorCallBack(error);
+                    }
+                    this.popUpError(error);
+                });
+        };
+
+        loadProject_(filePath, callBack);
+    }
+
+    detectCoral(request, callBack = null, errorCallBack = null) {
+        eel.detect_coral(request.toJson())()
+            .then((response) => {
+                this.recordData();
+
+                const importedData = Data.parseResponse(response);
+                const data = this.getData();
+                for (const mask of importedData.getMasks()) {
+                    data.addMask(mask);
+                }
+
+                const canvas = new Canvas();
+                canvas.updateMasks();
+
+                if (callBack != null) {
+                    callBack();
+                }
+            })
+            .catch((error) => {
+                if (errorCallBack != null) {
+                    errorCallBack(error);
+                }
+                this.popUpError(error);
+            });
+    }
+
+    setCurrentDataFromServer(callback = null, errorCallback = null) {
+        eel.get_current_data()()
+            .then((response) => {})
+            .catch((error) => {
+                if (errorCallback) {
+                    errorCallback(error);
+                }
+                this.popUpError();
+            });
+    }
+
+    getQuadrat() {
+        return this.quadrat;
+    }
+
+    setQuadrat(quadrat) {
+        this.quadrat = quadrat;
+    }
+}
+
+/**
+ * This function will be called in the server side
+ * Update the precentage text shown in the loading pop window
+ * @param {number} percentage
+ */
+eel.expose(updateProgressPercentage);
+function updateProgressPercentage(percentage) {
+    // Do nothing
+}
+
+/**
+ * This function will be called in the server side.
+ * It will be called after the project creation process is done.
+ * @param {Object} status
+ */
+eel.expose(afterProjectCreation);
+function afterProjectCreation(status) {
+    const loadingPopManager = new LoadingPopManager();
+    loadingPopManager.hide();
+
+    if (status["finished"]) {
+        const core = new Core();
+        core.loadProject();
+    } else {
+        const errorPopManager = new ErrorPopManager();
+        errorPopManager.clear();
+        errorPopManager.updateLargeText("Error");
+        errorPopManager.updateText(
+            "Image embedding generation failed. Please try again."
+        );
+        errorPopManager.addButton("OK", "OK", () => {
+            errorPopManager.hide();
+        });
+        errorPopManager.show();
     }
 }
