@@ -5,18 +5,15 @@ import { MaskCreator } from "./maskCreator.js";
 import { FileDialogRequest } from "../requests/index.js";
 import { AnnotationRenderer } from "./annotationRenderer.js";
 
-import { Data, CategoryManager } from "./data/index.js";
+import { Data, CategoryManager } from "./../data/index.js";
 
-import {
-    ActionPanel,
-    LabelPanel,
-    TopPanel,
-    GalleryPage,
-    StatisticPage,
-    NavigationBar,
-} from "./panels/index.js";
+import { NavigationBar } from "./panels/index.js";
 
 import { ErrorPopManager, LoadingPopManager } from "../util/index.js";
+
+import { ActionPanel, LabelPanel, TopPanel } from "../panels/index.js";
+import { navigateTo } from "../util/navigate.js";
+import { GalleryPage, StatisticPage } from "../pages/index.js";
 
 /**
  * Core of the frontend. It is used to communicate with the backend.

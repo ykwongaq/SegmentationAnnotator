@@ -1,10 +1,10 @@
-import { Canvas } from "../canvas.js";
+import { Canvas } from "../label/canvas.js";
 import { CategoryManager } from "../data/categoryManager.js";
 import { ActionPanel } from "./actionPanel.js";
-import { Slider } from "../../util/slider.js";
+import { Slider } from "../util/slider.js";
 import { ActionManager } from "../action/actionManager.js";
-import { GeneralPopManager } from "../../util/generalPopManager.js";
-import { Core } from "../core.js";
+import { GeneralPopManager } from "../util/generalPopManager.js";
+import { Core } from "../label/core.js";
 
 export class LabelPanel {
     static TYPE_HEALTHY = 0;

@@ -1,6 +1,6 @@
-import { Core } from "../core.js";
+import { Core } from "../label/core.js";
 import { Category, CategoryManager } from "../data/index.js";
-import { GeneralPopManager } from "../../util/generalPopManager.js";
+import { GeneralPopManager } from "../util/generalPopManager.js";
 
 export class StatisticPage {
     static SHALLOW_GRAY_COLOR = "#D3D3D3";

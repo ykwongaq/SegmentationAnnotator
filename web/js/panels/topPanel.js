@@ -1,6 +1,6 @@
-import { Core } from "../core.js";
+import { Core } from "../label/core.js";
 import { ActionManager } from "../action/actionManager.js";
-import { NavigationBar } from "./navigationBar.js";
+import { NavigationBar } from "../label/panels/navigationBar.js";
 
 export class TopPanel {
     constructor(dom) {

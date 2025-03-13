@@ -1,18 +1,19 @@
 import { Core } from "./core.js";
 import { Canvas } from "./canvas.js";
-import { ActionManager } from "./action/actionManager.js";
+import { ActionManager } from "../action/actionManager.js";
 import { GeneralPopManager } from "../util/index.js";
+
+import { NavigationBar } from "./panels/index.js";
 
 import {
     LabelPanel,
     TopPanel,
     ActionPanel,
     ViewPanel,
-    NavigationBar,
-    GalleryPage,
-    StatisticPage,
-} from "./panels/index.js";
+} from "../panels/index.js";
 
+import { navigateTo } from "../util/navigate.js";
+import { GalleryPage, StatisticPage } from "../pages/index.js";
 export class LabelPage {
     constructor() {
         this.core = new Core();
@@ -59,12 +60,12 @@ export class LabelPage {
         const galleryPage = new GalleryPage(galleryPageDom);
         galleryPage.init();
 
-        // Statistic Page
-        const statisticPageDom = document.getElementById(
-            NavigationBar.STATISTIC_PAGE
-        );
-        const statisticPage = new StatisticPage(statisticPageDom);
-        statisticPage.init();
+        // // Statistic Page
+        // const statisticPageDom = document.getElementById(
+        //     NavigationBar.STATISTIC_PAGE
+        // );
+        // const statisticPage = new StatisticPage(statisticPageDom);
+        // statisticPage.init();
 
         // Action Manager
         const actionManager = new ActionManager();

@@ -1,5 +1,5 @@
-import { Core } from "../core.js";
-import { NavigationBar } from "./navigationBar.js";
+import { Core } from "../label/core.js";
+import { NavigationBar } from "../label/panels/navigationBar.js";
 
 export class GalleryPage {
     constructor(dom) {

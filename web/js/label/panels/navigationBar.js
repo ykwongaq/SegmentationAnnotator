@@ -1,13 +1,11 @@
 import { Core } from "../core.js";
 import { Canvas } from "../canvas.js";
-import { StatisticPage } from "./statisticPage.js";
 import { LoadingPopManager } from "../../util/loadingPopManager.js";
 import { FileDialogRequest } from "../../requests/filedialogRequest.js";
 
 export class NavigationBar {
     static GALLERY_PAGE = "galleryPage";
     static ANNOTATION_PAGE = "annotationPage";
-    static STATISTIC_PAGE = "statisticPage";
 
     constructor(dom) {
         if (NavigationBar.instance) {
@@ -18,7 +16,6 @@ export class NavigationBar {
 
         this.galleryButton = this.dom.querySelector("#gallery-button");
         this.labelButton = this.dom.querySelector("#label-button");
-        this.statisticButton = this.dom.querySelector("#statistic-button");
 
         this.exportButton = this.dom.querySelector("#file-button");
         this.exportDropDownMenu = this.dom.querySelector("#file-dropdown-menu");
@@ -27,10 +24,10 @@ export class NavigationBar {
             "#export-annotated-image-button"
         );
         this.exportCOCOButton = this.dom.querySelector("#export-coco-button");
-        this.exportExcelButton = this.dom.querySelector("#export-excel-button");
-        this.exportChartsButton = this.dom.querySelector(
-            "#export-graph-button"
-        );
+        // this.exportExcelButton = this.dom.querySelector("#export-excel-button");
+        // this.exportChartsButton = this.dom.querySelector(
+        //     "#export-graph-button"
+        // );
         this.exportAllButton = this.dom.querySelector("#export-all-button");
 
         this.saveDropdownButton = this.dom.querySelector(
@@ -49,7 +46,6 @@ export class NavigationBar {
     init() {
         this.initGalleryButton();
         this.initLabelButton();
-        this.initStatisticButton();
         this.initExportButton();
         this.initSave();
     }
@@ -65,15 +61,6 @@ export class NavigationBar {
             this.showPage(NavigationBar.ANNOTATION_PAGE);
             const canvas = new Canvas();
             canvas.resetViewpoint();
-        });
-    }
-
-    initStatisticButton() {
-        this.statisticButton.addEventListener("click", () => {
-            this.showPage(NavigationBar.STATISTIC_PAGE);
-
-            const statisticPage = new StatisticPage();
-            statisticPage.update();
         });
     }
 
@@ -201,73 +188,73 @@ export class NavigationBar {
             });
         });
 
-        this.exportExcelButton.addEventListener("click", () => {
-            const core = new Core();
-            core.save(() => {
-                this.disable();
-                core.selectFolder(null, (fileFolder) => {
-                    if (fileFolder === null) {
-                        this.enable();
-                        return;
-                    }
+        // this.exportExcelButton.addEventListener("click", () => {
+        //     const core = new Core();
+        //     core.save(() => {
+        //         this.disable();
+        //         core.selectFolder(null, (fileFolder) => {
+        //             if (fileFolder === null) {
+        //                 this.enable();
+        //                 return;
+        //             }
 
-                    const loadingPopManager = new LoadingPopManager();
-                    loadingPopManager.clear();
-                    loadingPopManager.updateLargeText("Exporting");
-                    loadingPopManager.updateText(
-                        "Exporting the excel files. Please wait."
-                    );
-                    loadingPopManager.show();
+        //             const loadingPopManager = new LoadingPopManager();
+        //             loadingPopManager.clear();
+        //             loadingPopManager.updateLargeText("Exporting");
+        //             loadingPopManager.updateText(
+        //                 "Exporting the excel files. Please wait."
+        //             );
+        //             loadingPopManager.show();
 
-                    core.exportExcel(
-                        fileFolder,
-                        () => {
-                            loadingPopManager.hide();
-                            this.enable();
-                        },
-                        (error) => {
-                            console.error(error);
-                            loadingPopManager.hide();
-                            this.enable();
-                        }
-                    );
-                });
-            });
-        });
+        //             core.exportExcel(
+        //                 fileFolder,
+        //                 () => {
+        //                     loadingPopManager.hide();
+        //                     this.enable();
+        //                 },
+        //                 (error) => {
+        //                     console.error(error);
+        //                     loadingPopManager.hide();
+        //                     this.enable();
+        //                 }
+        //             );
+        //         });
+        //     });
+        // });
 
-        this.exportChartsButton.addEventListener("click", () => {
-            const core = new Core();
-            core.save(() => {
-                this.disable();
-                core.selectFolder(null, async (fileFolder) => {
-                    if (fileFolder === null) {
-                        this.enable();
-                        return;
-                    }
+        // this.exportChartsButton.addEventListener("click", () => {
+        //     const core = new Core();
+        //     core.save(() => {
+        //         this.disable();
+        //         core.selectFolder(null, async (fileFolder) => {
+        //             if (fileFolder === null) {
+        //                 this.enable();
+        //                 return;
+        //             }
 
-                    const loadingPopManager = new LoadingPopManager();
-                    loadingPopManager.clear();
-                    loadingPopManager.updateLargeText("Exporting");
-                    loadingPopManager.updateText(
-                        "Exporting the charts. Please wait."
-                    );
-                    loadingPopManager.show();
+        //             const loadingPopManager = new LoadingPopManager();
+        //             loadingPopManager.clear();
+        //             loadingPopManager.updateLargeText("Exporting");
+        //             loadingPopManager.updateText(
+        //                 "Exporting the charts. Please wait."
+        //             );
+        //             loadingPopManager.show();
 
-                    core.exportCharts(
-                        fileFolder,
-                        () => {
-                            loadingPopManager.hide();
-                            this.enable();
-                        },
-                        (error) => {
-                            console.error(error);
-                            loadingPopManager.hide();
-                            this.enable();
-                        }
-                    );
-                });
-            });
-        });
+        //             core.exportCharts(
+        //                 fileFolder,
+        //                 () => {
+        //                     loadingPopManager.hide();
+        //                     this.enable();
+        //                 },
+        //                 (error) => {
+        //                     console.error(error);
+        //                     loadingPopManager.hide();
+        //                     this.enable();
+        //                 }
+        //             );
+        //         });
+        //     });
+        // });
 
         this.exportAllButton.addEventListener("click", () => {
             const core = new Core();
@@ -296,30 +283,8 @@ export class NavigationBar {
                                     core.exportCOCO(
                                         fileFolder,
                                         () => {
-                                            core.exportExcel(
-                                                fileFolder,
-                                                () => {
-                                                    core.exportCharts(
-                                                        fileFolder,
-                                                        () => {
-                                                            loadingPopManager.hide();
-                                                            this.enable();
-                                                        },
-                                                        (error) => {
-                                                            console.error(
-                                                                error
-                                                            );
-                                                            loadingPopManager.hide();
-                                                            this.enable();
-                                                        }
-                                                    );
-                                                },
-                                                (error) => {
-                                                    console.error(error);
-                                                    loadingPopManager.hide();
-                                                    this.enable();
-                                                }
-                                            );
+                                            loadingPopManager.hide();
+                                            this.enable();
                                         },
                                         (error) => {
                                             console.error(error);
@@ -494,7 +459,6 @@ export class NavigationBar {
     disable() {
         this.galleryButton.disabled = true;
         this.labelButton.disabled = true;
-        this.statisticButton.disabled = true;
         this.exportButton.disabled = true;
         this.disableExport();
         this.disableSave();
@@ -503,7 +467,6 @@ export class NavigationBar {
     enable() {
         this.galleryButton.disabled = false;
         this.labelButton.disabled = false;
-        this.statisticButton.disabled = false;
         this.exportButton.disabled = false;
         this.enableExport();
         this.enableSave();
@@ -513,8 +476,8 @@ export class NavigationBar {
         this.exportImageButton.disabled = true;
         this.exportAnnotatedImageButton.disabled = true;
         this.exportCOCOButton.disabled = true;
-        this.exportExcelButton.disabled = true;
-        this.exportChartsButton.disabled = true;
+        // this.exportExcelButton.disabled = true;
+        // this.exportChartsButton.disabled = true;
         this.exportAllButton.disabled = true;
     }
 
@@ -522,8 +485,8 @@ export class NavigationBar {
         this.exportImageButton.disabled = false;
         this.exportAnnotatedImageButton.disabled = false;
         this.exportCOCOButton.disabled = false;
-        this.exportExcelButton.disabled = false;
-        this.exportChartsButton.disabled = false;
+        // this.exportExcelButton.disabled = false;
+        // this.exportChartsButton.disabled = false;
         this.exportAllButton.disabled = false;
     }
 

@@ -1,7 +1,8 @@
 import { Canvas } from "./canvas.js";
 import { Core } from "./core.js";
-import { ActionPanel } from "./panels/index.js";
-import { Mask } from "./data/index.js";
+// import { ActionPanel } from "./panels/index.js";
+import { Mask } from "./../data/index.js";
+import { ActionPanel } from "../panels/actionPanel.js";
 
 export class Prompt {
     static POSITIVE = 1;

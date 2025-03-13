@@ -1,9 +1,9 @@
-import { CategorySelector } from "../categorySelector.js";
-import { MaskSelector } from "../maskSelector.js";
-import { Canvas } from "../canvas.js";
-import { Core } from "../core.js";
+import { CategorySelector } from "../label/categorySelector.js";
+import { MaskSelector } from "../label/maskSelector.js";
+import { Canvas } from "../label/canvas.js";
+import { Core } from "../label/core.js";
 import { ActionManager } from "../action/actionManager.js";
-import { LabelPanel } from "../panels/index.js";
+import { LabelPanel } from "./labelPanel.js";
 import { AddMaskPanel } from "./addMaskPanel.js";
 
 export class ActionPanel {
