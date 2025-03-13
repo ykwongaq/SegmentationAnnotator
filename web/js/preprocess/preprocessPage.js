@@ -1,18 +1,19 @@
-import { Core } from "./core.js";
+import { PreprocessCore } from "./preprocessCore.js";
 import { ImageSelector } from "./imageSelector.js";
 import { FileDialogRequest, CreateProjectRequest } from "../requests/index.js";
 import { GeneralPopManager, LoadingPopManager } from "../util/index.js";
-import { NavigationBar, ConfigPage, DropArea } from "./panels/index.js";
+import { NavigationBar, DropArea } from "../panels/index.js";
+import { navigateTo } from "../util/navigate.js";
 
 /**
  * PreprocessPage class
  */
 export class PreprocessPage {
     constructor() {
-        // Home Button
-        this.backMainPageButton = document.getElementById(
-            "back-to-main-page-button"
-        );
+        if (PreprocessPage.instance) {
+            return PreprocessPage.instance;
+        }
+        PreprocessPage.instance = this;
 
         // File input area
         this.dropAreaDom = document.getElementById("drop-container");
@@ -38,13 +39,8 @@ export class PreprocessPage {
 
         // Navigation Bar
         const navigationBarDom = document.getElementById("navigation-bar");
-        const navigationBar = new NavigationBar(navigationBarDom);
-        navigationBar.init();
-
-        // Settting Page
-        const settingPage = document.getElementById("settingPage");
-        this.configPage = new ConfigPage(settingPage);
-        this.configPage.init();
+        this.navigationBar = new NavigationBar(navigationBarDom);
+        this.navigationBar.init();
 
         this.galleryItems = [];
     }
@@ -184,22 +180,19 @@ export class PreprocessPage {
         this.createProjectButton.addEventListener("click", () => {
             // Prevent user from clicking the button multiple times
             this.disableCreateProjectButton();
-            this.disableNavigationButton();
+            this.disableNavigationBar();
 
             const fileDialogRequest = new FileDialogRequest();
-            fileDialogRequest.setTitle("Save CoralSCOP-LAT Project File");
-            fileDialogRequest.addFileType(
-                "CoralSCOP-LAT Project File",
-                "*.coral"
-            );
-            fileDialogRequest.setDefaultExt(".coral");
+            fileDialogRequest.setTitle("Save SAT Project File");
+            fileDialogRequest.addFileType("SAT Project File", "*.sat");
+            fileDialogRequest.setDefaultExt(".sat");
 
             // Ask user to select the project folder
-            const core = new Core();
+            const core = new PreprocessCore();
             core.selectSaveFile(fileDialogRequest, (projectPath) => {
                 if (projectPath === null) {
                     this.enableCreateProjectButton();
-                    this.enableNavigationButton();
+                    this.enableNavigationBar();
                     return;
                 }
 
@@ -236,9 +229,6 @@ export class PreprocessPage {
                     createProjectRequest.addInput(image_url, selectedImageName);
                 }
 
-                const config = this.configPage.getConfig();
-                createProjectRequest.setConfig(config);
-
                 core.createProject(createProjectRequest);
             });
         });
@@ -250,7 +240,7 @@ export class PreprocessPage {
      */
     afterProjectCreation(status) {
         this.enableCreateProjectButton();
-        this.enableNavigationButton();
+        this.enableNavigationBar();
 
         const loadingPopManager = new LoadingPopManager();
         loadingPopManager.hide();
@@ -366,12 +356,12 @@ export class PreprocessPage {
         this.imageSelector.deselectImage(imageFileName);
     }
 
-    enableNavigationButton() {
-        this.backMainPageButton.enabled = true;
+    enableNavigationBar() {
+        this.navigationBar.enable();
     }
 
-    disableNavigationButton() {
-        this.backMainPageButton.enabled = false;
+    disableNavigationBar() {
+        this.navigationBar.disable();
     }
 }
 

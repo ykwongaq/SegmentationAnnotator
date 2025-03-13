@@ -1,7 +1,3 @@
-function navigateTo(page) {
-    window.location.href = page;
-}
-
-function navigateWithoutClear(page) {
+export function navigateTo(page) {
     window.location.href = page;
 }
