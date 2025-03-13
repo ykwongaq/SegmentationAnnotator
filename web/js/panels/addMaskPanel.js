@@ -1,10 +1,10 @@
 import { ActionPanel } from "./actionPanel.js";
 import { ActionManager } from "../action/actionManager.js";
-import { MaskCreator } from "../label/maskCreator.js";
-import { MaskSelector } from "../label/maskSelector.js";
-import { CategorySelector } from "../label/categorySelector.js";
+import { MaskCreator } from "../action/maskCreator.js";
+import { MaskSelector } from "../action/maskSelector.js";
+import { CategorySelector } from "./categorySelector.js";
 import { Category } from "../data/index.js";
-import { Canvas } from "../label/canvas.js";
+import { Canvas } from "./canvas.js";
 
 export class AddMaskPanel {
     constructor(actionPanelDom, actionContainerDom) {

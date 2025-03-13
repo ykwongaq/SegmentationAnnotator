@@ -1,4 +1,4 @@
-import { Canvas } from "../label/canvas.js";
+import { Canvas } from "./canvas.js";
 import { ActionManager } from "../action/actionManager.js";
 
 export class ViewPanel {

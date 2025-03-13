@@ -1,6 +1,5 @@
-import { FileDialogRequest } from "../requests/index.js";
-import { ErrorPopManager, LoadingPopManager } from "../util/index.js";
-import { PreprocessPage } from "./preprocessPage.js";
+import { LoadingPopManager } from "../util/index.js";
+import { PreprocessInterface } from "./preprocessInterface.js";
 import { Core } from "../core/core.js";
 
 export class PreprocessCore extends Core {
@@ -59,6 +58,6 @@ function updateProgressPercentage(percentage) {
  */
 eel.expose(afterProjectCreation);
 function afterProjectCreation(status) {
-    const preprocessPage = new PreprocessPage();
+    const preprocessPage = new PreprocessInterface();
     preprocessPage.afterProjectCreation(status);
 }

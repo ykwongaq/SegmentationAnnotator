@@ -1,6 +1,6 @@
-import { MaskCreator } from "../label/maskCreator.js";
+import { MaskCreator } from "./maskCreator.js";
 import { ActionState } from "./actionState.js";
-import { Prompt } from "../label/maskCreator.js";
+import { Prompt } from "./maskCreator.js";
 
 export class MaskCreationState extends ActionState {
     constructor(context) {

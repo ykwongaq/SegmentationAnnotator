@@ -1,6 +1,6 @@
 import { ActionManager } from "../action/actionManager.js";
-import { Mask } from "./../data/index.js";
-import { Prompt } from "./maskCreator.js";
+import { Mask } from "../data/index.js";
+import { Prompt } from "../action/maskCreator.js";
 export class Canvas {
     constructor(dom) {
         if (Canvas.instance) {

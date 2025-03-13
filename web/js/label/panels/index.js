@@ -1,1 +1,1 @@
-export { NavigationBar } from "./navigationBar.js";
+export { NavigationBarLabel } from "./navigationBarLabel.js";

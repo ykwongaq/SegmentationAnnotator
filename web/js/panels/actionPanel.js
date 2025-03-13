@@ -1,7 +1,7 @@
-import { CategorySelector } from "../label/categorySelector.js";
-import { MaskSelector } from "../label/maskSelector.js";
-import { Canvas } from "../label/canvas.js";
-import { Core } from "../label/core.js";
+import { CategorySelector } from "./categorySelector.js";
+import { MaskSelector } from "../action/maskSelector.js";
+import { Canvas } from "./canvas.js";
+import { LabelCore } from "../label/labelCore.js";
 import { ActionManager } from "../action/actionManager.js";
 import { LabelPanel } from "./labelPanel.js";
 import { AddMaskPanel } from "./addMaskPanel.js";
@@ -56,7 +56,7 @@ export class ActionPanel {
 
             if (selectedMasks.size > 0) {
                 // Save record
-                const core = new Core();
+                const core = new LabelCore();
                 core.recordData();
             }
 
@@ -101,12 +101,12 @@ export class ActionPanel {
 
             if (selectedMasks.size > 0) {
                 // Record the data
-                const core = new Core();
+                const core = new LabelCore();
                 core.recordData();
             }
 
             // Remove the selected masks
-            const core = new Core();
+            const core = new LabelCore();
             const data = core.getData();
             for (const mask of selectedMasks) {
                 data.removeMask(mask);
@@ -147,7 +147,7 @@ export class ActionPanel {
 
     initUndoButton() {
         this.undoButton.addEventListener("click", () => {
-            const core = new Core();
+            const core = new LabelCore();
             core.undo();
         });
 
@@ -176,7 +176,7 @@ export class ActionPanel {
 
     initRedoButton() {
         this.redoButton.addEventListener("click", () => {
-            const core = new Core();
+            const core = new LabelCore();
             core.redo();
         });
 

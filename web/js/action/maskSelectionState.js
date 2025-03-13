@@ -1,13 +1,13 @@
 import { ActionState } from "./actionState.js";
-import { Core } from "../label/core.js";
-import { MaskSelector } from "../label/maskSelector.js";
-import { Canvas } from "../label/canvas.js";
+import { LabelCore } from "../label/labelCore.js";
+import { MaskSelector } from "./maskSelector.js";
+import { Canvas } from "../panels/canvas.js";
 
 export class MaskSelectionState extends ActionState {
     constructor(context) {
         super(context);
 
-        this.core = new Core();
+        this.core = new LabelCore();
         this.maskSelector = new MaskSelector();
         this.canvas = new Canvas();
     }

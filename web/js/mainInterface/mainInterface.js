@@ -1,11 +1,11 @@
 import { navigateTo } from "../util/navigate.js";
 
-export class MainPage {
+export class MainInterface {
     constructor() {
-        if (MainPage.instance) {
-            return MainPage.instance;
+        if (MainInterface.instance) {
+            return MainInterface.instance;
         }
-        MainPage.instance = this;
+        MainInterface.instance = this;
 
         this.createProjectButton = document.getElementById(
             "create-project-button"
@@ -25,7 +25,7 @@ export class MainPage {
 }
 
 function main() {
-    const mainPage = new MainPage();
+    const mainPage = new MainInterface();
     mainPage.init();
 }
 

@@ -1,17 +1,16 @@
-import { Core } from "../core.js";
-import { Canvas } from "../canvas.js";
+import { LabelCore } from "../labelCore.js";
+import { Canvas } from "../../panels/canvas.js";
 import { LoadingPopManager } from "../../util/loadingPopManager.js";
 import { FileDialogRequest } from "../../requests/filedialogRequest.js";
+import { NavigationBar } from "../../panels/navigationBar.js";
+import { Manager } from "../../manager.js";
 
-export class NavigationBar {
+export class NavigationBarLabel extends NavigationBar {
     static GALLERY_PAGE = "galleryPage";
     static ANNOTATION_PAGE = "annotationPage";
 
     constructor(dom) {
-        if (NavigationBar.instance) {
-            return NavigationBar.instance;
-        }
-        NavigationBar.instance = this;
+        super();
         this.dom = dom;
 
         this.galleryButton = this.dom.querySelector("#gallery-button");
@@ -24,10 +23,6 @@ export class NavigationBar {
             "#export-annotated-image-button"
         );
         this.exportCOCOButton = this.dom.querySelector("#export-coco-button");
-        // this.exportExcelButton = this.dom.querySelector("#export-excel-button");
-        // this.exportChartsButton = this.dom.querySelector(
-        //     "#export-graph-button"
-        // );
         this.exportAllButton = this.dom.querySelector("#export-all-button");
 
         this.saveDropdownButton = this.dom.querySelector(
@@ -39,8 +34,8 @@ export class NavigationBar {
             "#file-dropdown-menu-save"
         );
 
-        this.pages = document.querySelectorAll(".page");
-        this.currentPageId = null;
+        this.pages = {};
+        this.currentPage = null;
     }
 
     init() {
@@ -52,15 +47,13 @@ export class NavigationBar {
 
     initGalleryButton() {
         this.galleryButton.addEventListener("click", () => {
-            this.showPage(NavigationBar.GALLERY_PAGE);
+            this.showPage(NavigationBarLabel.GALLERY_PAGE);
         });
     }
 
     initLabelButton() {
         this.labelButton.addEventListener("click", () => {
-            this.showPage(NavigationBar.ANNOTATION_PAGE);
-            const canvas = new Canvas();
-            canvas.resetViewpoint();
+            this.showPage(NavigationBarLabel.ANNOTATION_PAGE);
         });
     }
 
@@ -73,7 +66,7 @@ export class NavigationBar {
         });
 
         this.exportImageButton.addEventListener("click", () => {
-            const core = new Core();
+            const core = new LabelCore();
             core.save(() => {
                 this.disable();
                 core.selectFolder(null, (fileFolder) => {
@@ -108,7 +101,7 @@ export class NavigationBar {
         });
 
         this.exportAnnotatedImageButton.addEventListener("click", () => {
-            const core = new Core();
+            const core = new LabelCore();
             core.save(() => {
                 this.disable();
                 core.selectFolder(null, (fileFolder) => {
@@ -149,7 +142,7 @@ export class NavigationBar {
         });
 
         this.exportCOCOButton.addEventListener("click", () => {
-            const core = new Core();
+            const core = new LabelCore();
             core.save(() => {
                 this.disable();
 
@@ -188,76 +181,8 @@ export class NavigationBar {
             });
         });
 
-        // this.exportExcelButton.addEventListener("click", () => {
-        //     const core = new Core();
-        //     core.save(() => {
-        //         this.disable();
-        //         core.selectFolder(null, (fileFolder) => {
-        //             if (fileFolder === null) {
-        //                 this.enable();
-        //                 return;
-        //             }
-
-        //             const loadingPopManager = new LoadingPopManager();
-        //             loadingPopManager.clear();
-        //             loadingPopManager.updateLargeText("Exporting");
-        //             loadingPopManager.updateText(
-        //                 "Exporting the excel files. Please wait."
-        //             );
-        //             loadingPopManager.show();
-
-        //             core.exportExcel(
-        //                 fileFolder,
-        //                 () => {
-        //                     loadingPopManager.hide();
-        //                     this.enable();
-        //                 },
-        //                 (error) => {
-        //                     console.error(error);
-        //                     loadingPopManager.hide();
-        //                     this.enable();
-        //                 }
-        //             );
-        //         });
-        //     });
-        // });
-
-        // this.exportChartsButton.addEventListener("click", () => {
-        //     const core = new Core();
-        //     core.save(() => {
-        //         this.disable();
-        //         core.selectFolder(null, async (fileFolder) => {
-        //             if (fileFolder === null) {
-        //                 this.enable();
-        //                 return;
-        //             }
-
-        //             const loadingPopManager = new LoadingPopManager();
-        //             loadingPopManager.clear();
-        //             loadingPopManager.updateLargeText("Exporting");
-        //             loadingPopManager.updateText(
-        //                 "Exporting the charts. Please wait."
-        //             );
-        //             loadingPopManager.show();
-
-        //             core.exportCharts(
-        //                 fileFolder,
-        //                 () => {
-        //                     loadingPopManager.hide();
-        //                     this.enable();
-        //                 },
-        //                 (error) => {
-        //                     console.error(error);
-        //                     loadingPopManager.hide();
-        //                     this.enable();
-        //                 }
-        //             );
-        //         });
-        //     });
-        // });
-
         this.exportAllButton.addEventListener("click", () => {
-            const core = new Core();
+            const core = new LabelCore();
             core.save(() => {
                 this.disable();
                 core.selectFolder(null, (fileFolder) => {
@@ -336,7 +261,7 @@ export class NavigationBar {
             );
             loadingPopManager.show();
 
-            const core = new Core();
+            const core = new LabelCore();
             // Save the current data first and then save the dataset
             core.save(
                 () => {
@@ -362,7 +287,7 @@ export class NavigationBar {
         });
 
         this.saveToButton.addEventListener("click", () => {
-            const core = new Core();
+            const core = new LabelCore();
             core.save(
                 () => {
                     this.disable();
@@ -426,24 +351,20 @@ export class NavigationBar {
     }
 
     showPage(pageId) {
+        this.currentPage.leavePage();
         this.clearActiveState();
-        switch (pageId) {
-            case NavigationBar.GALLERY_PAGE:
-                // TODO: Handle leaving the gallery page
-                break;
-            case NavigationBar.ANNOTATION_PAGE:
-                // TODO: Handle leaving the annotation page
-                break;
-            case NavigationBar.STATISTIC_PAGE:
-                // TODO: Handle leaving the annotation page
-                break;
-            default:
-                break;
-        }
+        const [page, pageDom] = this.pages[pageId];
+        pageDom.classList.add("active-page");
+        page.enterPage();
+        this.currentPage = page;
+    }
 
-        this.currentPageId = pageId;
-        const page = document.getElementById(pageId);
-        page.classList.add("active-page");
+    addPage(pageId, page, pageDom) {
+        this.pages[pageId] = [page, pageDom];
+    }
+
+    clearPages() {
+        this.pages = {};
     }
 
     getCurrentPageId() {
@@ -451,8 +372,8 @@ export class NavigationBar {
     }
 
     clearActiveState() {
-        for (const page of this.pages) {
-            page.classList.remove("active-page");
+        for (const [page, pageDom] of Object.values(this.pages)) {
+            pageDom.classList.remove("active-page");
         }
     }
 

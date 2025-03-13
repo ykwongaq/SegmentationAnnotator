@@ -8,12 +8,12 @@ import { navigateTo } from "../util/navigate.js";
 /**
  * PreprocessPage class
  */
-export class PreprocessPage {
+export class PreprocessInterface {
     constructor() {
-        if (PreprocessPage.instance) {
-            return PreprocessPage.instance;
+        if (PreprocessInterface.instance) {
+            return PreprocessInterface.instance;
         }
-        PreprocessPage.instance = this;
+        PreprocessInterface.instance = this;
 
         // File input area
         this.dropAreaDom = document.getElementById("drop-container");
@@ -366,7 +366,7 @@ export class PreprocessPage {
 }
 
 function main() {
-    const preprocessPage = new PreprocessPage();
+    const preprocessPage = new PreprocessInterface();
     preprocessPage.initDropArea();
     preprocessPage.initSelectAllButton();
     preprocessPage.initDeselectAllButton();

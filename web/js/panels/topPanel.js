@@ -1,6 +1,6 @@
-import { Core } from "../label/core.js";
+import { LabelCore } from "../label/labelCore.js";
 import { ActionManager } from "../action/actionManager.js";
-import { NavigationBar } from "../label/panels/navigationBar.js";
+import { NavigationBarLabel } from "../label/panels/navigationBarLabel.js";
 
 export class TopPanel {
     constructor(dom) {
@@ -28,7 +28,7 @@ export class TopPanel {
     initNextImageButton() {
         this.nextImageButton.addEventListener("click", () => {
             this.disableButtons();
-            const core = new Core();
+            const core = new LabelCore();
             core.nextData(() => {
                 this.enableButtons();
             });
@@ -67,7 +67,7 @@ export class TopPanel {
     initPrevImageButton() {
         this.prevImageButton.addEventListener("click", () => {
             this.disableButtons();
-            const core = new Core();
+            const core = new LabelCore();
             core.prevData(() => {
                 this.enableButtons();
             });
@@ -105,7 +105,7 @@ export class TopPanel {
 
     initGalleryButton() {
         this.galleryButton.addEventListener("click", () => {
-            const navigationBar = new NavigationBar();
+            const navigationBar = new NavigationBarLabel();
             navigationBar.galleryButton.click();
         });
     }
@@ -121,7 +121,7 @@ export class TopPanel {
     }
 
     update() {
-        const core = new Core();
+        const core = new LabelCore();
         const data = core.getData();
 
         const imageName = data.getImageName();

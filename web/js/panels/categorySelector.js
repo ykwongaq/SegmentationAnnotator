@@ -1,5 +1,5 @@
-import { Category, CategoryManager } from "./../data/index.js";
-import { LabelPanel } from "../panels/index.js";
+import { Category, CategoryManager } from "../data/index.js";
+import { LabelPanel } from "./index.js";
 
 export class CategorySelector {
     static UNDEFINED_COLOR = "#dedede";

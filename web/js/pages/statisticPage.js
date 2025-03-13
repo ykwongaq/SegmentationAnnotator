@@ -1,4 +1,4 @@
-import { Core } from "../label/core.js";
+import { LabelCore } from "../label/labelCore.js";
 import { Category, CategoryManager } from "../data/index.js";
 import { GeneralPopManager } from "../util/generalPopManager.js";
 
@@ -128,7 +128,7 @@ export class StatisticPage {
             }
         }
 
-        const core = new Core();
+        const core = new LabelCore();
         const data = core.getData();
 
         this.clearCharts();

@@ -1,10 +1,10 @@
-import { Canvas } from "../label/canvas.js";
+import { Canvas } from "./canvas.js";
 import { CategoryManager } from "../data/categoryManager.js";
 import { ActionPanel } from "./actionPanel.js";
 import { Slider } from "../util/slider.js";
 import { ActionManager } from "../action/actionManager.js";
 import { GeneralPopManager } from "../util/generalPopManager.js";
-import { Core } from "../label/core.js";
+import { LabelCore } from "../label/labelCore.js";
 
 export class LabelPanel {
     static TYPE_HEALTHY = 0;
@@ -376,7 +376,7 @@ export class LabelPanel {
             const newStatus = value === "1" ? 0 : 1;
             maskHideButton.setAttribute("value", newStatus);
 
-            const core = new Core();
+            const core = new LabelCore();
             const data = core.getData();
             const masks = data.getMasks();
 
@@ -393,7 +393,7 @@ export class LabelPanel {
         });
 
         // Activate the button based on the mask status
-        const core = new Core();
+        const core = new LabelCore();
         const data = core.getData();
         const masks = data.getMasks();
         for (const mask of masks) {
@@ -476,7 +476,7 @@ export class LabelPanel {
             // is not used by any mask
 
             // Check is the category is used in current image
-            const core = new Core();
+            const core = new LabelCore();
             let imageIds = await core.getImageIdsByCategory(category);
 
             // If the category is a coral, also need to check

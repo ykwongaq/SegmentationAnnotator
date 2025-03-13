@@ -1,13 +1,9 @@
-import { Core } from "../label/core.js";
-import { NavigationBar } from "../label/panels/navigationBar.js";
+import { LabelCore } from "../label/labelCore.js";
+import { NavigationBarLabel } from "../label/panels/navigationBarLabel.js";
+import { Page } from "./page.js";
 
-export class GalleryPage {
+export class GalleryPage extends Page {
     constructor(dom) {
-        if (GalleryPage.instance) {
-            return GalleryPage.instance;
-        }
-        GalleryPage.instance = this;
-
         this.dom = dom;
 
         this.galleryContainer = this.dom.querySelector("#gallery-container");
@@ -55,10 +51,10 @@ export class GalleryPage {
         // Add click event
         item.addEventListener("click", () => {
             this.disableItems();
-            const core = new Core();
+            const core = new LabelCore();
             core.jumpData(galleryData.idx, () => {
-                const navigationBar = new NavigationBar();
-                navigationBar.showPage(NavigationBar.ANNOTATION_PAGE);
+                const navigationBar = new NavigationBarLabel();
+                navigationBar.showPage(NavigationBarLabel.ANNOTATION_PAGE);
                 this.enableItems();
             });
         });

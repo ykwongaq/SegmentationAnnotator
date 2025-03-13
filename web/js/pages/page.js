@@ -1,11 +1,7 @@
 export class Page {
     constructor() {}
 
-    enterPage() {
-        throw new Error("Not implemented");
-    }
+    enterPage() {}
 
-    leavePage() {
-        throw new Error("Not implemented");
-    }
+    leavePage() {}
 }

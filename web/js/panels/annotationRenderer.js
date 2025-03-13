@@ -1,4 +1,4 @@
-import { Canvas } from "./canvas.js";
+import { Canvas } from "../label/canvas.js";
 
 export class AnnotationRenderer {
     constructor() {

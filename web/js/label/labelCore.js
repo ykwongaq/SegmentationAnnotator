@@ -1,11 +1,12 @@
-import { Record, HistoryManager } from "./historyManager.js";
-import { Canvas } from "./canvas.js";
-import { MaskSelector } from "./maskSelector.js";
-import { MaskCreator } from "./maskCreator.js";
+import { Record, HistoryManager } from "../action/historyManager.js";
+import { Canvas } from "../panels/canvas.js";
+import { MaskSelector } from "../action/maskSelector.js";
+import { MaskCreator } from "../action/maskCreator.js";
 import { FileDialogRequest } from "../requests/index.js";
-import { AnnotationRenderer } from "./annotationRenderer.js";
+import { AnnotationRenderer } from "../panels/annotationRenderer.js";
+import { Manager } from "../manager.js";
 
-import { Data, CategoryManager } from "./../data/index.js";
+import { Data, CategoryManager } from "../data/index.js";
 
 import { NavigationBar } from "./panels/index.js";
 
@@ -14,101 +15,24 @@ import { ErrorPopManager, LoadingPopManager } from "../util/index.js";
 import { ActionPanel, LabelPanel, TopPanel } from "../panels/index.js";
 import { navigateTo } from "../util/navigate.js";
 import { GalleryPage, StatisticPage } from "../pages/index.js";
+import { Core } from "../core/core.js";
 
 /**
  * Core of the frontend. It is used to communicate with the backend.
  */
-export class Core {
+export class LabelCore extends Core {
     static DEFAULT_HISTORY_SIZE = 10;
-    static ISSUE_URL = "https://github.com/ykwongaq/CoralSCOP-LAT/issues";
 
     constructor() {
-        if (Core.instance) {
-            return Core.instance;
-        }
-        Core.instance = this;
+        super();
         this.data = null;
         this.dataHistoryManager = null;
-
         this.dataModified = false;
-
-        return this;
-    }
-
-    /**
-     * Select a path to the file
-     * @param {FileDialogRequest} request
-     * @param {function} callBack
-     */
-    selectFile(request, callBack = null, errorCallBack = null) {
-        if (request === null) {
-            request = new FileDialogRequest();
-            request.setTitle("Select File");
-        }
-
-        eel.select_file(request.toJson())()
-            .then((filePath) => {
-                if (callBack) {
-                    callBack(filePath);
-                }
-            })
-            .catch((error) => {
-                if (errorCallBack) {
-                    errorCallBack(error);
-                } else {
-                    this.popUpError(error);
-                }
-            });
-    }
-
-    /**
-     * Select a path to the folder
-     * @param {FileDialogRequest} request
-     * @param {function} callBack
-     */
-    selectFolder(request, callBack = null, errorCallBack = null) {
-        if (request === null) {
-            request = new FileDialogRequest();
-            request.setTitle("Select Folder");
-        }
-
-        eel.select_folder(request.toJson())()
-            .then((folderPath) => {
-                if (callBack) {
-                    callBack(folderPath);
-                }
-            })
-            .catch((error) => {
-                if (errorCallBack) {
-                    errorCallBack(error);
-                } else {
-                    this.popUpError(error);
-                }
-            });
-    }
-
-    /**
-     * Select a file path to save a file
-     * @param {FileDialogRequest} request
-     * @param {function} callBack
-     */
-    selectSaveFile(request, callBack = null, errorCallBack = null) {
-        eel.select_save_file(request.toJson())()
-            .then((filePath) => {
-                if (callBack) {
-                    callBack(filePath);
-                }
-            })
-            .catch((error) => {
-                if (errorCallBack) {
-                    errorCallBack(error);
-                } else {
-                    this.popUpError(error);
-                }
-            });
     }
 
     loadProject(filePath = null, callBack = null, errorCallBack = null) {
+        const manager = new Manager();
+
         const navigationBar = new NavigationBar();
         navigationBar.disable();
 
@@ -134,14 +58,16 @@ export class Core {
                                 response["status_info"]
                             );
 
-                            const galleryPage = new GalleryPage();
+                            const galleryPage = manager
+                                .getInterface()
+                                .getGalleryPage();
                             galleryPage.updateGallery(galleryDataList);
 
                             const data = Data.parseResponse(response);
                             this.setData(data);
 
                             this.dataHistoryManager = new HistoryManager(
-                                Core.DEFAULT_HISTORY_SIZE
+                                LabelCore.DEFAULT_HISTORY_SIZE
                             );
                             this.showData();
 
@@ -159,26 +85,25 @@ export class Core {
                             loadingPopManager.hide();
                             if (errorCallBack != null) {
                                 errorCallBack(error);
+                            } else {
+                                this.popUpError(error);
                             }
-                            this.popUpError(error);
                         });
                 })
                 .catch((error) => {
                     loadingPopManager.hide();
                     if (errorCallBack != null) {
                         errorCallBack(error);
+                    } else {
+                        this.popUpError(error);
                     }
-                    this.popUpError(error);
                 });
         };
 
         if (filePath === null) {
             const fileDialogRequest = new FileDialogRequest();
-            fileDialogRequest.setTitle("Save CoralSCOP-LAT Project File");
-            fileDialogRequest.addFileType(
-                "CoralSCOP-LAT Project File",
-                "*.coral"
-            );
+            fileDialogRequest.setTitle("Save SAT Project File");
+            fileDialogRequest.addFileType("SAT Project File", "*.sat");
             this.selectFile(
                 fileDialogRequest,
                 (filePath_) => {
@@ -310,7 +235,7 @@ export class Core {
                     this.setData(Data.parseResponse(response));
 
                     this.dataHistoryManager = new HistoryManager(
-                        Core.DEFAULT_HISTORY_SIZE
+                        LabelCore.DEFAULT_HISTORY_SIZE
                     );
                     this.showData();
 
@@ -346,7 +271,7 @@ export class Core {
 
                     this.setData(Data.parseResponse(response));
                     this.dataHistoryManager = new HistoryManager(
-                        Core.DEFAULT_HISTORY_SIZE
+                        LabelCore.DEFAULT_HISTORY_SIZE
                     );
                     this.showData();
 
@@ -382,7 +307,7 @@ export class Core {
 
                     this.setData(Data.parseResponse(response));
                     this.dataHistoryManager = new HistoryManager(
-                        Core.DEFAULT_HISTORY_SIZE
+                        LabelCore.DEFAULT_HISTORY_SIZE
                     );
                     this.showData();
 
@@ -400,16 +325,19 @@ export class Core {
     }
 
     showData() {
-        const canvas = new Canvas();
+        const manager = new Manager();
+        const annotationPage = manager.getInterface().getAnnotationPage();
+
+        const canvas = annotationPage.getCanvas();
         canvas.showData(this.data);
 
-        const labelPanel = new LabelPanel();
+        const labelPanel = annotationPage.getLabelPanel();
         labelPanel.updateCategoryButtons();
 
-        const actionPanel = new ActionPanel();
+        const actionPanel = annotationPage.getActionPanel();
         actionPanel.updateCategoryButtons();
 
-        const topPanel = new TopPanel();
+        const topPanel = annotationPage.getTopPanel();
         topPanel.update();
     }
 
@@ -423,8 +351,9 @@ export class Core {
             .catch((error) => {
                 if (errorCallBack != null) {
                     errorCallBack(error);
+                } else {
+                    this.popUpError(error);
                 }
-                this.popUpError(error);
             });
     }
 
@@ -438,8 +367,9 @@ export class Core {
             .catch((error) => {
                 if (errorCallBack != null) {
                     errorCallBack(error);
+                } else {
+                    this.popUpError(error);
                 }
-                this.popUpError(error);
             });
     }
 
@@ -495,8 +425,9 @@ export class Core {
             .catch((error) => {
                 if (errorCallBack != null) {
                     errorCallBack(error);
+                } else {
+                    this.popUpError(error);
                 }
-                this.popUpError(error);
             });
     }
 
@@ -528,8 +459,9 @@ export class Core {
                         .catch((error) => {
                             if (errorCallBack != null) {
                                 errorCallBack(error);
+                            } else {
+                                this.popUpError(error);
                             }
-                            this.popUpError(error);
                             return;
                         });
 
@@ -549,8 +481,9 @@ export class Core {
                 } catch (error) {
                     if (errorCallBack != null) {
                         errorCallBack(error);
+                    } else {
+                        this.popUpError(error);
                     }
-                    this.popUpError(error);
                 }
             }
 
@@ -570,8 +503,9 @@ export class Core {
             .catch((error) => {
                 if (errorCallBack != null) {
                     errorCallBack(error);
+                } else {
+                    this.popUpError(error);
                 }
-                this.popUpError(error);
             });
     }
 
@@ -585,8 +519,9 @@ export class Core {
             .catch((error) => {
                 if (errorCallBack != null) {
                     errorCallBack(error);
+                } else {
+                    this.popUpError(error);
                 }
-                this.popUpError(error);
             });
     }
 
@@ -626,8 +561,9 @@ export class Core {
             .catch((error) => {
                 if (errorCallBack != null) {
                     errorCallBack(error);
+                } else {
+                    this.popUpError(error);
                 }
-                this.popUpError(error);
             });
     }
 
@@ -646,8 +582,9 @@ export class Core {
             .catch((error) => {
                 if (errorCallBack != null) {
                     errorCallBack(error);
+                } else {
+                    this.popUpError(error);
                 }
-                this.popUpError(error);
             });
     }
 
@@ -671,28 +608,5 @@ export class Core {
             return;
         }
         this.loadRecord(nextRecord);
-    }
-
-    popUpError(error, shownMessage = null) {
-        const errorPopManager = new ErrorPopManager();
-        errorPopManager.clear();
-        errorPopManager.updateLargeText("Error");
-        errorPopManager.updateText(
-            shownMessage
-                ? shownMessage
-                : `Please re-launch the application. Or report the issue to the developer via <a href="${Core.ISSUE_URL}" target="_blank">Github</a>`
-        );
-        errorPopManager.addButton("OK", "OK", () => {
-            errorPopManager.hide();
-        });
-
-        let errorMsg =
-            "Error Message:\n\n" +
-            error.errorText +
-            "\n\n" +
-            error.errorTraceback;
-        errorPopManager.updateTextBox(errorMsg);
-        errorPopManager.show();
-        console.error(error);
     }
 }

@@ -1,7 +1,6 @@
-import { Canvas } from "./canvas.js";
-import { Core } from "./core.js";
-// import { ActionPanel } from "./panels/index.js";
-import { Mask } from "./../data/index.js";
+import { Canvas } from "../panels/canvas.js";
+import { LabelCore } from "../label/labelCore.js";
+import { Mask } from "../data/index.js";
 import { ActionPanel } from "../panels/actionPanel.js";
 
 export class Prompt {
@@ -83,7 +82,7 @@ export class MaskCreator {
             return;
         }
 
-        const core = new Core();
+        const core = new LabelCore();
         core.createPromptedMask(this.prompts, (annotation) => {
             this.mask = new Mask(annotation);
             canvas.showPromptedMask(this.mask, this.prompts);
@@ -108,7 +107,7 @@ export class MaskCreator {
         }
 
         // Record data
-        const core = new Core();
+        const core = new LabelCore();
         core.recordData();
 
         // Add the mask into the data
