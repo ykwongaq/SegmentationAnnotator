@@ -306,14 +306,9 @@ export class NavigationBarLabel extends NavigationBar {
                 () => {
                     this.disable();
                     const fileDialogRequest = new FileDialogRequest();
-                    fileDialogRequest.setTitle(
-                        "Save CoralSCOP-LAT Project File"
-                    );
-                    fileDialogRequest.addFileType(
-                        "CoralSCOP-LAT Project File",
-                        "*.coral"
-                    );
-                    fileDialogRequest.setDefaultExt(".coral");
+                    fileDialogRequest.setTitle("Save SAT Project File");
+                    fileDialogRequest.addFileType("SAT Project File", "*.sat");
+                    fileDialogRequest.setDefaultExt(".sat");
 
                     core.selectSaveFile(
                         fileDialogRequest,
