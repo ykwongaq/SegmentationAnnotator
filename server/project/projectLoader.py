@@ -11,6 +11,7 @@ from PIL import Image
 from ..dataset import Data, Dataset
 from ..util.general import get_resource_path
 from ..util.json import load_json
+from .projectCreator import ProjectCreator
 
 TEMP_CREATE_NAME = "__coralscop_lat_temp"
 TEMP_CREATE_NAME_2 = "__coralscop_lat_temp_2"
@@ -33,6 +34,16 @@ class ProjectLoader:
         - Dataset: The loaded dataset
         - int: Last image index
         """
+
+        if project_path is None:
+            project_path = ProjectCreator.TEMP_PROJECT_FILE
+
+        assert os.path.exists(
+            project_path
+        ), f"Project file {project_path} does not exist"
+
+        self.logger.info(f"Loading project from {project_path}")
+
         # Unzip the project file
         start_time = time.time()
         temp_output_dir = os.path.join(os.path.dirname(project_path), TEMP_LOAD_NAME)

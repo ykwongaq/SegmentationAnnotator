@@ -6,6 +6,7 @@ import eel
 import numpy as np
 import zipfile
 import shutil
+import tempfile
 
 from ..util.general import decode_image_url
 from ..util.json import save_json
@@ -19,13 +20,17 @@ from ..jsonFormat import (
     AnnotationFileJson,
 )
 
-TEMP_CREATE_NAME = "__coralscop_lat_temp"
+TEMP_CREATE_NAME = "__sat_temp"
 
 
 class ProjectCreator:
 
     SAM_ENCODER_PATH = "models/vit_h_encoder_quantized.onnx"
     SAM_MODEL_TYPE = "vit_b"
+
+    TEMP_PROJECT_FILE = os.path.join(
+        tempfile.gettempdir(), "SAT", "temp_project.sat"
+    )
 
     # Singleton
     _instance = None
@@ -59,6 +64,11 @@ class ProjectCreator:
         inputs = sorted(inputs, key=lambda x: x["image_file_name"])
 
         output_file = request.get_output_file()
+
+        if output_file is None:
+            output_file = ProjectCreator.TEMP_PROJECT_FILE
+        self.logger.info(f"Creating project at {output_file}")
+
         if os.path.exists(output_file):
             os.remove(output_file)
 
@@ -66,7 +76,6 @@ class ProjectCreator:
 
         # Temporary folders for storing images, embeddings, annotations, and project info
         output_temp_dir = os.path.join(output_dir, TEMP_CREATE_NAME)
-        # Clear the temporary folder if it exists
         if os.path.exists(output_temp_dir):
             shutil.rmtree(output_temp_dir)
         os.makedirs(output_temp_dir, exist_ok=True)
@@ -95,10 +104,6 @@ class ProjectCreator:
             self.logger.info(f"Processing input {idx + 1} of {len(inputs)}")
             self.logger.info(f"Processing image: {image_filename}")
 
-            # image, embedding, annotations = self.process_one_input(
-            #     image_url, image_filename, min_area, min_confidence, max_iou
-            # )
-
             start_time = time.time()
             self.logger.info(f"Processing image {image_filename} ...")
 
@@ -106,6 +111,7 @@ class ProjectCreator:
             if "image_path" in input:
                 image_path = input["image_path"]
                 image = Image.open(image_path)
+                image = image.convert("RGB")
                 image = np.array(image)
             else:
                 image_url = input["image_url"]
@@ -123,7 +129,7 @@ class ProjectCreator:
                 terminated = True
                 break
 
-            # Detect coral
+            # Generate annotations
             annotation_file_json = AnnotationFileJson()
 
             image_json = ImageJson()
@@ -132,6 +138,14 @@ class ProjectCreator:
             image_json.set_width(image.shape[1])
             image_json.set_height(image.shape[0])
             annotation_file_json.add_image(image_json)
+
+            end_time = time.time()
+            self.logger.info(f"Processed image in {end_time - start_time:.2f} seconds")
+
+            # Check if the stop event is set
+            if image is None or embedding is None:
+                terminated = True
+                break
 
             image_path = os.path.join(image_folder, image_filename)
             embedding_path = os.path.join(embedding_folder, f"{filename}.npy")
@@ -160,13 +174,9 @@ class ProjectCreator:
 
         project_info_json = ProjectInfoJson()
         project_info_json.set_last_image_idx(0)
-
         save_json(project_info_json.to_json(), project_info_path)
 
-        # project_name = self.find_available_project_name(output_dir)
-        # project_path = os.path.join(output_dir, project_name)
         project_path = output_file
-        self.logger.info(f"Creating project file: {project_path}")
         with zipfile.ZipFile(project_path, "w") as archive:
             for root, _, files in os.walk(output_temp_dir):
                 for file in files:

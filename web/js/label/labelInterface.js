@@ -2,15 +2,9 @@ import { LabelCore } from "./labelCore.js";
 import { Manager } from "../manager.js";
 import { GeneralPopManager } from "../util/index.js";
 
-import { NavigationBarLabel } from "./panels/index.js";
+import { NavigationBarLabel, TopPanelLabel } from "./panels/index.js";
 
-import {
-    LabelPanel,
-    TopPanel,
-    ActionPanel,
-    ViewPanel,
-    Canvas,
-} from "../panels/index.js";
+import { LabelPanel, ActionPanel, ViewPanel, Canvas } from "../panels/index.js";
 
 import { navigateTo } from "../util/navigate.js";
 import { AnnotationPage } from "../pages/index.js";
@@ -61,7 +55,7 @@ export class LabelInterface {
 
         // Top Panel
         const topPanelDom = document.getElementById("top-panel");
-        const topPanel = new TopPanel(topPanelDom);
+        const topPanel = new TopPanelLabel(topPanelDom);
         topPanel.init();
         this.annotationPage.setTopPanel(topPanel);
 

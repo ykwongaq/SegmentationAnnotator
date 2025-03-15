@@ -27,6 +27,7 @@ class ProjectSaver:
     def save_dataset(
         self, dataset: Dataset, project_path_origin: str, project_path_new: str
     ):
+        print(f"Saving dataset to {project_path_new} and {project_path_origin}")
         # Unzip the original project to temp folder
         temp_folder_origin = os.path.join(
             os.path.dirname(project_path_origin), TEMP_CREATE_NAME

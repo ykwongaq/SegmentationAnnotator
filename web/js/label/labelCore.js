@@ -12,15 +12,13 @@ import { ErrorPopManager, LoadingPopManager } from "../util/index.js";
 import { ActionPanel, LabelPanel, TopPanel } from "../panels/index.js";
 import { navigateTo } from "../util/navigate.js";
 import { GalleryPage, StatisticPage } from "../pages/index.js";
-import { Core } from "../core/core.js";
+import { AnnotationCore } from "../core/annotationCore.js";
 import { NavigationBarLabel } from "./panels/navigationBarLabel.js";
 
 /**
  * Core of the frontend. It is used to communicate with the backend.
  */
-export class LabelCore extends Core {
-    static DEFAULT_HISTORY_SIZE = 10;
-
+export class LabelCore extends AnnotationCore {
     constructor() {
         super();
         this.data = null;
@@ -62,7 +60,7 @@ export class LabelCore extends Core {
                             this.setData(data);
 
                             this.dataHistoryManager = new HistoryManager(
-                                LabelCore.DEFAULT_HISTORY_SIZE
+                                AnnotationCore.DEFAULT_HISTORY_SIZE
                             );
                             this.showData();
 
@@ -137,75 +135,6 @@ export class LabelCore extends Core {
         } else {
             loadProject_(filePath, callBack);
         }
-    }
-
-    setData(data) {
-        this.data = data;
-    }
-
-    /**
-     * Record current data into the history
-     */
-    recordData() {
-        const categoryManager = new CategoryManager();
-        const categoryInfo = structuredClone(categoryManager.toJson());
-        const data = this.getData();
-        const record = new Record(data.deepCopy(), categoryInfo);
-        this.dataHistoryManager.record(record);
-    }
-
-    loadRecord(record) {
-        // Clear all selected masks
-        const maskSelector = new MaskSelector();
-        maskSelector.clearSelection();
-
-        // Clear all prompting masks
-        const maskCreator = new MaskCreator();
-        maskCreator.clearPrompts();
-
-        const data = record.getData();
-        const categoryInfo = record.getCategoryInfo();
-
-        const categoryManager = new CategoryManager();
-        categoryManager.updateCategoryList(categoryInfo);
-
-        this.setData(data);
-        this.showData();
-    }
-
-    getData() {
-        return this.data;
-    }
-
-    /**
-     * Save the current data
-     * {
-     *   "images": List[Dict]
-     *   "annotations": List[Dict]
-     *   "category_info": List[Dict]
-     * }
-     * @param {function} callBack
-     */
-    save(callBack = null, errorCallBack = null) {
-        const data = this.data.toJson();
-
-        const categoryManager = new CategoryManager();
-        const categoryInfo = categoryManager.toJson();
-
-        data["category_info"] = categoryInfo;
-
-        eel.save_data(data)()
-            .then(() => {
-                if (callBack != null) {
-                    callBack();
-                }
-            })
-            .catch((error) => {
-                if (errorCallBack != null) {
-                    errorCallBack(error);
-                }
-                this.popUpError(error);
-            });
     }
 
     nextData(callBack = null, errorCallBack = null) {
@@ -317,55 +246,6 @@ export class LabelCore extends Core {
         });
     }
 
-    showData() {
-        const manager = new Manager();
-        const annotationPage = manager.getToolInterface().getAnnotationPage();
-
-        const canvas = annotationPage.getCanvas();
-        canvas.showData(this.data);
-
-        const labelPanel = annotationPage.getLabelPanel();
-        labelPanel.updateCategoryButtons();
-
-        const actionPanel = annotationPage.getActionPanel();
-        actionPanel.updateCategoryButtons();
-
-        const topPanel = annotationPage.getTopPanel();
-        topPanel.update();
-    }
-
-    saveDataset(filePath, callBack = null, errorCallBack = null) {
-        eel.save_dataset(filePath)()
-            .then(() => {
-                if (callBack != null) {
-                    callBack();
-                }
-            })
-            .catch((error) => {
-                if (errorCallBack != null) {
-                    errorCallBack(error);
-                } else {
-                    this.popUpError(error);
-                }
-            });
-    }
-
-    createPromptedMask(prompts, callBack = null, errorCallBack = null) {
-        eel.create_mask(prompts)()
-            .then((annotation) => {
-                if (callBack != null) {
-                    callBack(annotation);
-                }
-            })
-            .catch((error) => {
-                if (errorCallBack != null) {
-                    errorCallBack(error);
-                } else {
-                    this.popUpError(error);
-                }
-            });
-    }
-
     setDataModified(modified) {
         this.dataModified = modified;
     }
@@ -406,100 +286,6 @@ export class LabelCore extends Core {
         }
 
         return imageIds;
-    }
-
-    exportImages(outputDir, callBack = null, errorCallBack = null) {
-        eel.export_images(outputDir)()
-            .then(() => {
-                if (callBack != null) {
-                    callBack();
-                }
-            })
-            .catch((error) => {
-                if (errorCallBack != null) {
-                    errorCallBack(error);
-                } else {
-                    this.popUpError(error);
-                }
-            });
-    }
-
-    exportAnnotatedImages(outputDir, callBack = null, errorCallBack = null) {
-        this.getDataList(async (dataList) => {
-            const loadingPopManager = new LoadingPopManager();
-
-            let idx = 0;
-            const dataLen = dataList.length;
-
-            for (const data of dataList) {
-                try {
-                    const annotatedDataInfoList = [];
-                    const annotationRenderer = new AnnotationRenderer();
-                    await annotationRenderer.render(data);
-                    const encodedImage = annotationRenderer.getEncodedImage();
-                    const imageName = data.getImageName();
-                    const annotatedDataInfo = {
-                        image_name: imageName,
-                        encoded_image: encodedImage,
-                    };
-                    annotatedDataInfoList.push(annotatedDataInfo);
-
-                    await eel
-                        .export_annotated_images(
-                            outputDir,
-                            annotatedDataInfoList
-                        )()
-                        .catch((error) => {
-                            if (errorCallBack != null) {
-                                errorCallBack(error);
-                            } else {
-                                this.popUpError(error);
-                            }
-                            return;
-                        });
-
-                    idx += 1;
-                    if (loadingPopManager.isShowing()) {
-                        loadingPopManager.updatePercentage(
-                            ((idx / dataLen) * 100).toFixed(2)
-                        );
-                    }
-
-                    const terminate =
-                        loadingPopManager.getProperty("terminate");
-                    if (terminate) {
-                        loadingPopManager.hide();
-                        return;
-                    }
-                } catch (error) {
-                    if (errorCallBack != null) {
-                        errorCallBack(error);
-                    } else {
-                        this.popUpError(error);
-                    }
-                }
-            }
-
-            if (callBack != null) {
-                callBack();
-            }
-        });
-    }
-
-    exportCOCO(outputPath, callBack = null, errorCallBack = null) {
-        eel.export_coco(outputPath)()
-            .then(() => {
-                if (callBack != null) {
-                    callBack();
-                }
-            })
-            .catch((error) => {
-                if (errorCallBack != null) {
-                    errorCallBack(error);
-                } else {
-                    this.popUpError(error);
-                }
-            });
     }
 
     exportExcel(outputDir, callBack = null, errorCallBack = null) {
@@ -558,48 +344,5 @@ export class LabelCore extends Core {
                     this.popUpError(error);
                 }
             });
-    }
-
-    getDataList(callBack = null, errorCallBack = null) {
-        eel.get_data_list()()
-            .then((dataInfoList) => {
-                const dataList = [];
-                for (const dataInfo of dataInfoList) {
-                    dataList.push(Data.parseResponse(dataInfo));
-                }
-
-                if (callBack != null) {
-                    callBack(dataList);
-                }
-            })
-            .catch((error) => {
-                if (errorCallBack != null) {
-                    errorCallBack(error);
-                } else {
-                    this.popUpError(error);
-                }
-            });
-    }
-
-    undo() {
-        const data = this.getData();
-
-        const categoryManager = new CategoryManager();
-        const categoryInfo = structuredClone(categoryManager.toJson());
-        const record = new Record(data.deepCopy(), categoryInfo);
-
-        const prevRecord = this.dataHistoryManager.undo(record);
-        if (prevRecord === null) {
-            return;
-        }
-        this.loadRecord(prevRecord);
-    }
-
-    redo() {
-        const nextRecord = this.dataHistoryManager.redo();
-        if (nextRecord === null) {
-            return;
-        }
-        this.loadRecord(nextRecord);
     }
 }

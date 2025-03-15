@@ -11,6 +11,7 @@ export class MainInterface {
             "create-project-button"
         );
         this.loadProjectButton = document.getElementById("load-project-button");
+        this.quickStartButton = document.getElementById("quick-start-button");
     }
 
     init() {
@@ -20,6 +21,10 @@ export class MainInterface {
 
         this.loadProjectButton.addEventListener("click", () => {
             navigateTo("label.html?askLoadProject=true");
+        });
+
+        this.quickStartButton.addEventListener("click", () => {
+            navigateTo("quickStart.html");
         });
     }
 }
