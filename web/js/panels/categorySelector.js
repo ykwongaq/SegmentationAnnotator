@@ -1,5 +1,6 @@
 import { Category, CategoryManager } from "../data/index.js";
 import { LabelPanel } from "./index.js";
+import { Manager } from "../manager.js";
 
 export class CategorySelector {
     static UNDEFINED_COLOR = "#dedede";
@@ -33,28 +34,15 @@ export class CategorySelector {
         this.clearCategoryButtons();
         const categoryManager = new CategoryManager();
 
-        const labelPanel = new LabelPanel();
+        const manager = new Manager();
+        const labelPanel = manager
+            .getToolInterface()
+            .getAnnotationPage()
+            .getLabelPanel();
         const currentType = labelPanel.getCurrentType();
 
         // Get the category list based on the current type
-        let categoryList = [];
-        if (currentType === LabelPanel.TYPE_HEALTHY) {
-            categoryList = categoryManager.getCategoryListByStatus(
-                CategoryManager.STATUS_HEALTHY
-            );
-        } else if (currentType === LabelPanel.TYPE_BLEACHED) {
-            categoryList = categoryManager.getCategoryListByStatus(
-                CategoryManager.STATUS_BLEACHED
-            );
-        } else if (currentType === LabelPanel.TYPE_DEAD) {
-            categoryList = categoryManager.getCategoryListByStatus(
-                CategoryManager.STATUS_DEAD
-            );
-        } else {
-            console.error("Invalid category type: ", currentType);
-            return;
-        }
-
+        let categoryList = categoryManager.getCategoryList();
         for (const category of categoryList) {
             const button = this.createCategoryButton(category);
             this.categoryButtonContainer.appendChild(button);

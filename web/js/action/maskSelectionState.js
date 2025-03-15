@@ -1,15 +1,10 @@
 import { ActionState } from "./actionState.js";
-import { LabelCore } from "../label/labelCore.js";
 import { MaskSelector } from "./maskSelector.js";
-import { Canvas } from "../panels/canvas.js";
+import { Manager } from "../manager.js";
 
 export class MaskSelectionState extends ActionState {
     constructor(context) {
         super(context);
-
-        this.core = new LabelCore();
-        this.maskSelector = new MaskSelector();
-        this.canvas = new Canvas();
     }
 
     /**
@@ -26,17 +21,26 @@ export class MaskSelectionState extends ActionState {
      * @param {number} imageY
      */
     leftClickPixel(imageX, imageY) {
-        const data = this.core.getData();
+        const manager = new Manager();
+        const core = manager.getCore();
+        const data = core.getData();
         const masks = data.getMasks();
+
+        const maskSelector = new MaskSelector();
         for (const mask of masks) {
             if (mask.containPixel(imageX, imageY)) {
-                if (this.maskSelector.isSelected(mask)) {
-                    this.maskSelector.unselectMask(mask);
+                if (maskSelector.isSelected(mask)) {
+                    maskSelector.unselectMask(mask);
                 } else {
-                    this.maskSelector.selectMask(mask);
+                    maskSelector.selectMask(mask);
                 }
             }
         }
-        this.canvas.updateMasks();
+
+        const canvas = manager
+            .getToolInterface()
+            .getAnnotationPage()
+            .getCanvas();
+        canvas.updateMasks();
     }
 }

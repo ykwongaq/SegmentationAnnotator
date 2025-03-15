@@ -6,7 +6,7 @@ export class Manager {
         Manager.instance = this;
 
         this.core = null;
-        this.interface = null;
+        this.interface_ = null;
     }
 
     setCore(core) {
@@ -17,11 +17,11 @@ export class Manager {
         return this.core;
     }
 
-    getInterface() {
-        return this.interface;
+    getToolInterface() {
+        return this.interface_;
     }
 
-    setInterface(interface) {
-        this.interface = interface;
+    setToolInterface(interface_) {
+        this.interface_ = interface_;
     }
 }

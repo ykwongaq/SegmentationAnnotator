@@ -1,5 +1,5 @@
 import { Record, HistoryManager } from "../action/historyManager.js";
-import { Canvas } from "../panels/canvas.js";
+
 import { MaskSelector } from "../action/maskSelector.js";
 import { MaskCreator } from "../action/maskCreator.js";
 import { FileDialogRequest } from "../requests/index.js";
@@ -7,15 +7,13 @@ import { AnnotationRenderer } from "../panels/annotationRenderer.js";
 import { Manager } from "../manager.js";
 
 import { Data, CategoryManager } from "../data/index.js";
-
-import { NavigationBar } from "./panels/index.js";
-
 import { ErrorPopManager, LoadingPopManager } from "../util/index.js";
 
 import { ActionPanel, LabelPanel, TopPanel } from "../panels/index.js";
 import { navigateTo } from "../util/navigate.js";
 import { GalleryPage, StatisticPage } from "../pages/index.js";
 import { Core } from "../core/core.js";
+import { NavigationBarLabel } from "./panels/navigationBarLabel.js";
 
 /**
  * Core of the frontend. It is used to communicate with the backend.
@@ -33,7 +31,7 @@ export class LabelCore extends Core {
     loadProject(filePath = null, callBack = null, errorCallBack = null) {
         const manager = new Manager();
 
-        const navigationBar = new NavigationBar();
+        const navigationBar = manager.getToolInterface().getNavigationBar();
         navigationBar.disable();
 
         const loadProject_ = (filePath_, callBack_) => {
@@ -54,12 +52,9 @@ export class LabelCore extends Core {
                             categoryManager.updateCategoryList(
                                 response["category_info"]
                             );
-                            categoryManager.updateStatus(
-                                response["status_info"]
-                            );
 
                             const galleryPage = manager
-                                .getInterface()
+                                .getToolInterface()
                                 .getGalleryPage();
                             galleryPage.updateGallery(galleryDataList);
 
@@ -72,7 +67,7 @@ export class LabelCore extends Core {
                             this.showData();
 
                             navigationBar.showPage(
-                                NavigationBar.ANNOTATION_PAGE
+                                NavigationBarLabel.ANNOTATION_PAGE
                             );
 
                             navigationBar.enable();
@@ -196,10 +191,8 @@ export class LabelCore extends Core {
 
         const categoryManager = new CategoryManager();
         const categoryInfo = categoryManager.toJson();
-        const statusInfo = categoryManager.getStatusInfo();
 
         data["category_info"] = categoryInfo;
-        data["status_info"] = statusInfo;
 
         eel.save_data(data)()
             .then(() => {
@@ -326,7 +319,7 @@ export class LabelCore extends Core {
 
     showData() {
         const manager = new Manager();
-        const annotationPage = manager.getInterface().getAnnotationPage();
+        const annotationPage = manager.getToolInterface().getAnnotationPage();
 
         const canvas = annotationPage.getCanvas();
         canvas.showData(this.data);

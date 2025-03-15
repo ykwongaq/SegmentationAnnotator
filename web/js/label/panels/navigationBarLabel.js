@@ -1,5 +1,4 @@
 import { LabelCore } from "../labelCore.js";
-import { Canvas } from "../../panels/canvas.js";
 import { LoadingPopManager } from "../../util/loadingPopManager.js";
 import { FileDialogRequest } from "../../requests/filedialogRequest.js";
 import { NavigationBar } from "../../panels/navigationBar.js";
@@ -66,7 +65,8 @@ export class NavigationBarLabel extends NavigationBar {
         });
 
         this.exportImageButton.addEventListener("click", () => {
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             core.save(() => {
                 this.disable();
                 core.selectFolder(null, (fileFolder) => {
@@ -94,6 +94,7 @@ export class NavigationBarLabel extends NavigationBar {
                             console.error(error);
                             loadingPopManager.hide();
                             this.enable();
+                            core.popUpError(error);
                         }
                     );
                 });
@@ -101,7 +102,8 @@ export class NavigationBarLabel extends NavigationBar {
         });
 
         this.exportAnnotatedImageButton.addEventListener("click", () => {
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             core.save(() => {
                 this.disable();
                 core.selectFolder(null, (fileFolder) => {
@@ -135,6 +137,7 @@ export class NavigationBarLabel extends NavigationBar {
                             console.error(error);
                             loadingPopManager.hide();
                             this.enable();
+                            core.popUpError(error);
                         }
                     );
                 });
@@ -142,7 +145,8 @@ export class NavigationBarLabel extends NavigationBar {
         });
 
         this.exportCOCOButton.addEventListener("click", () => {
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             core.save(() => {
                 this.disable();
 
@@ -175,6 +179,8 @@ export class NavigationBarLabel extends NavigationBar {
                             console.error(error);
                             loadingPopManager.hide();
                             this.enable();
+                            core.popUpError(error);
+                            s;
                         }
                     );
                 });
@@ -182,7 +188,8 @@ export class NavigationBarLabel extends NavigationBar {
         });
 
         this.exportAllButton.addEventListener("click", () => {
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             core.save(() => {
                 this.disable();
                 core.selectFolder(null, (fileFolder) => {
@@ -215,6 +222,7 @@ export class NavigationBarLabel extends NavigationBar {
                                             console.error(error);
                                             loadingPopManager.hide();
                                             this.enable();
+                                            core.popUpError(error);
                                         }
                                     );
                                 },
@@ -222,6 +230,7 @@ export class NavigationBarLabel extends NavigationBar {
                                     console.error(error);
                                     loadingPopManager.hide();
                                     this.enable();
+                                    core.popUpError(error);
                                 }
                             );
                         },
@@ -229,6 +238,7 @@ export class NavigationBarLabel extends NavigationBar {
                             console.error(error);
                             loadingPopManager.hide();
                             this.enable();
+                            core.popUpError(error);
                         }
                     );
                 });
@@ -261,7 +271,8 @@ export class NavigationBarLabel extends NavigationBar {
             );
             loadingPopManager.show();
 
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             // Save the current data first and then save the dataset
             core.save(
                 () => {
@@ -275,6 +286,7 @@ export class NavigationBarLabel extends NavigationBar {
                             console.error(error);
                             loadingPopManager.hide();
                             this.enable();
+                            core.popUpError(error);
                         }
                     );
                 },
@@ -282,12 +294,14 @@ export class NavigationBarLabel extends NavigationBar {
                     console.error(error);
                     loadingPopManager.hide();
                     this.enable();
+                    core.popUpError(error);
                 }
             );
         });
 
         this.saveToButton.addEventListener("click", () => {
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             core.save(
                 () => {
                     this.disable();
@@ -327,18 +341,21 @@ export class NavigationBarLabel extends NavigationBar {
                                     console.error(error);
                                     loadingPopManager.hide();
                                     this.enable();
+                                    core.popUpError(error);
                                 }
                             );
                         },
                         (error) => {
                             console.error(error);
                             this.enable();
+                            core.popUpError(error);
                         }
                     );
                 },
                 (error) => {
                     console.error(error);
                     this.enable();
+                    core.popUpError(error);
                 }
             );
         });
@@ -351,7 +368,9 @@ export class NavigationBarLabel extends NavigationBar {
     }
 
     showPage(pageId) {
-        this.currentPage.leavePage();
+        if (this.currentPage) {
+            this.currentPage.leavePage();
+        }
         this.clearActiveState();
         const [page, pageDom] = this.pages[pageId];
         pageDom.classList.add("active-page");

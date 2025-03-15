@@ -175,5 +175,4 @@ cython_debug/
 
 models/
 output/
-data/
 web/assets/

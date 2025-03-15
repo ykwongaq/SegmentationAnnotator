@@ -3,12 +3,6 @@ import { Mask } from "../data/index.js";
 import { Prompt } from "../action/maskCreator.js";
 export class Canvas {
     constructor(dom) {
-        if (Canvas.instance) {
-            return Canvas.instance;
-        }
-
-        Canvas.instance = this;
-
         this.canvas = dom;
         this.ctx = this.canvas.getContext("2d");
 

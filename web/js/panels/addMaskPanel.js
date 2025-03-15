@@ -5,14 +5,10 @@ import { MaskSelector } from "../action/maskSelector.js";
 import { CategorySelector } from "./categorySelector.js";
 import { Category } from "../data/index.js";
 import { Canvas } from "./canvas.js";
+import { Manager } from "../manager.js";
 
 export class AddMaskPanel {
     constructor(actionPanelDom, actionContainerDom) {
-        if (AddMaskPanel.instance) {
-            return AddMaskPanel.instance;
-        }
-        AddMaskPanel.instance = this;
-
         this.actionPanelDom = actionPanelDom;
         this.actionContainerDom = actionContainerDom;
 
@@ -59,10 +55,17 @@ export class AddMaskPanel {
             const maskSelector = new MaskSelector();
             maskSelector.clearSelection();
 
-            const canvas = new Canvas();
+            const manager = new Manager();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.updateMasks();
 
-            const actionPanel = new ActionPanel();
+            const actionPanel = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getActionPanel();
             actionPanel.hide();
         });
 
@@ -190,10 +193,17 @@ export class AddMaskPanel {
             const maskSelector = new MaskSelector();
             maskSelector.clearSelection();
 
-            const canvas = new Canvas();
+            const manager = new Manager();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.updateMasks();
 
-            const actionPanel = new ActionPanel();
+            const actionPanel = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getActionPanel();
             actionPanel.show();
         });
 

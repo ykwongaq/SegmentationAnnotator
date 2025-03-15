@@ -5,14 +5,10 @@ import { LabelCore } from "../label/labelCore.js";
 import { ActionManager } from "../action/actionManager.js";
 import { LabelPanel } from "./labelPanel.js";
 import { AddMaskPanel } from "./addMaskPanel.js";
+import { Manager } from "../manager.js";
 
 export class ActionPanel {
     constructor(actionPanel, actionContainerDom) {
-        if (ActionPanel.instance) {
-            return ActionPanel.instance;
-        }
-        ActionPanel.instance = this;
-
         this.actionPanelDom = actionPanel;
 
         this.categorySelectorDom =
@@ -54,9 +50,11 @@ export class ActionPanel {
             const maskSelector = new MaskSelector();
             const selectedMasks = maskSelector.getSelectedMasks();
 
+            const manager = new Manager();
+
             if (selectedMasks.size > 0) {
                 // Save record
-                const core = new LabelCore();
+                const core = manager.getCore();
                 core.recordData();
             }
 
@@ -66,7 +64,10 @@ export class ActionPanel {
             maskSelector.clearSelection();
 
             // Update canvas visualization
-            const canvas = new Canvas();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.updateMasks();
         });
 
@@ -99,14 +100,15 @@ export class ActionPanel {
             const maskSelector = new MaskSelector();
             const selectedMasks = maskSelector.getSelectedMasks();
 
+            const manager = new Manager();
             if (selectedMasks.size > 0) {
                 // Record the data
-                const core = new LabelCore();
+                const core = manager.getCore();
                 core.recordData();
             }
 
             // Remove the selected masks
-            const core = new LabelCore();
+            const core = manager.getCore();
             const data = core.getData();
             for (const mask of selectedMasks) {
                 data.removeMask(mask);
@@ -116,7 +118,10 @@ export class ActionPanel {
             maskSelector.clearSelection();
 
             // Visualize the updated results
-            const canvas = new Canvas();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.updateMasks();
         });
 
@@ -129,7 +134,6 @@ export class ActionPanel {
             ActionManager.DEFAULT_STATE,
             "r",
             (event) => {
-                const labelPanel = new LabelPanel();
                 this.removeButton.click();
             }
         );
@@ -146,8 +150,9 @@ export class ActionPanel {
     }
 
     initUndoButton() {
+        const manager = new Manager();
         this.undoButton.addEventListener("click", () => {
-            const core = new LabelCore();
+            const core = manager.getCore();
             core.undo();
         });
 
@@ -175,8 +180,9 @@ export class ActionPanel {
     }
 
     initRedoButton() {
+        const manager = new Manager();
         this.redoButton.addEventListener("click", () => {
-            const core = new LabelCore();
+            const core = manager.getCore();
             core.redo();
         });
 

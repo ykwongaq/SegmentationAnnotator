@@ -13,7 +13,8 @@ import {
 } from "../panels/index.js";
 
 import { navigateTo } from "../util/navigate.js";
-import { AnnotationPage, GalleryPage } from "../pages/index.js";
+import { AnnotationPage } from "../pages/index.js";
+import { GalleryPageLabel } from "./pages/gallleryPageLabel.js";
 
 export class LabelInterface {
     constructor() {
@@ -36,11 +37,11 @@ export class LabelInterface {
     }
 
     init() {
-        const manager = new Manager(labelCore);
+        const manager = new Manager();
 
         const labelCore = new LabelCore();
         manager.setCore(labelCore);
-        manager.setInterface(this);
+        manager.setToolInterface(this);
 
         // AnnotationPage
         const annotationPageDom = document.getElementById("annotationPage");
@@ -79,17 +80,28 @@ export class LabelInterface {
         viewPanel.init();
         this.annotationPage.setViewPanel(viewPanel);
 
+        // Gallery Page
+        const galleryPageDom = document.getElementById(
+            NavigationBarLabel.GALLERY_PAGE
+        );
+        this.galleryPage = new GalleryPageLabel(galleryPageDom);
+        this.galleryPage.init();
+
         // Navigation Bar
         const navigationBarDom = document.getElementById("navigation-bar");
         this.navigationBar = new NavigationBarLabel(navigationBarDom);
         this.navigationBar.init();
 
-        // Gallery Page
-        const galleryPageDom = document.getElementById(
-            NavigationBar.GALLERY_PAGE
+        this.navigationBar.addPage(
+            NavigationBarLabel.ANNOTATION_PAGE,
+            this.annotationPage,
+            annotationPageDom
         );
-        this.galleryPage = new GalleryPage(galleryPageDom);
-        galleryPage.init();
+        this.navigationBar.addPage(
+            NavigationBarLabel.GALLERY_PAGE,
+            this.galleryPage,
+            galleryPageDom
+        );
     }
 }
 
@@ -98,6 +110,8 @@ function main() {
     labelPage.init();
 
     const urlParams = new URLSearchParams(window.location.search);
+    const manager = new Manager();
+
     if (urlParams.get("askLoadProject") === "true") {
         const popUpWindow = new GeneralPopManager();
         popUpWindow.clearButtons();
@@ -106,7 +120,7 @@ function main() {
             navigateTo("main_page.html");
         });
         popUpWindow.addButton("load-project-button", "Load Project", () => {
-            const core = new LabelCore();
+            const core = manager.getCore();
             core.loadProject();
             popUpWindow.hide();
         });
@@ -119,7 +133,7 @@ function main() {
             generalPopManager.updateLargeText("Hold Tight!");
             generalPopManager.updateText("Loading Project...");
             generalPopManager.show();
-            const core = new LabelCore();
+            const core = manager.getCore();
             core.loadProject(
                 projectPath,
                 () => {
@@ -127,6 +141,7 @@ function main() {
                 },
                 (error) => {
                     generalPopManager.hide();
+                    core.popUpError(error);
                 }
             );
         }
@@ -137,9 +152,7 @@ function main() {
         // event.returnValue = message;
         // return message;
 
-        const core = new LabelCore();
-        console.log(core.getData());
-        return core.isDataModified();
+        return true;
     };
 }
 

@@ -4,6 +4,7 @@ import { Page } from "./page.js";
 
 export class GalleryPage extends Page {
     constructor(dom) {
+        super();
         this.dom = dom;
 
         this.galleryContainer = this.dom.querySelector("#gallery-container");
@@ -47,17 +48,6 @@ export class GalleryPage extends Page {
         const imageName = galleryData.image_name;
         const filenameElement = item.querySelector(".gallery-item__name");
         filenameElement.textContent = `${idx + 1}. ${imageName}`;
-
-        // Add click event
-        item.addEventListener("click", () => {
-            this.disableItems();
-            const core = new LabelCore();
-            core.jumpData(galleryData.idx, () => {
-                const navigationBar = new NavigationBarLabel();
-                navigationBar.showPage(NavigationBarLabel.ANNOTATION_PAGE);
-                this.enableItems();
-            });
-        });
 
         return galleryItem;
     }

@@ -2,6 +2,7 @@ import { Page } from "./page.js";
 
 export class AnnotationPage extends Page {
     constructor(dom) {
+        super();
         this.dom = null;
         this.canvas = null;
         this.labelPanel = null;

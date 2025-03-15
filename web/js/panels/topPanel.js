@@ -1,14 +1,10 @@
 import { LabelCore } from "../label/labelCore.js";
 import { ActionManager } from "../action/actionManager.js";
 import { NavigationBarLabel } from "../label/panels/navigationBarLabel.js";
+import { Manager } from "../manager.js";
 
 export class TopPanel {
     constructor(dom) {
-        if (TopPanel.instance) {
-            return TopPanel.instance;
-        }
-        TopPanel.instance = this;
-
         this.dom = dom;
 
         this.prevImageButton = this.dom.querySelector("#prev-image-button");
@@ -28,7 +24,8 @@ export class TopPanel {
     initNextImageButton() {
         this.nextImageButton.addEventListener("click", () => {
             this.disableButtons();
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             core.nextData(() => {
                 this.enableButtons();
             });
@@ -67,7 +64,8 @@ export class TopPanel {
     initPrevImageButton() {
         this.prevImageButton.addEventListener("click", () => {
             this.disableButtons();
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             core.prevData(() => {
                 this.enableButtons();
             });
@@ -105,7 +103,8 @@ export class TopPanel {
 
     initGalleryButton() {
         this.galleryButton.addEventListener("click", () => {
-            const navigationBar = new NavigationBarLabel();
+            const manager = new Manager();
+            const navigationBar = manager.getToolInterface().getNavigationBar();
             navigationBar.galleryButton.click();
         });
     }
@@ -121,7 +120,9 @@ export class TopPanel {
     }
 
     update() {
-        const core = new LabelCore();
+        const manager = new Manager();
+
+        const core = manager.getCore();
         const data = core.getData();
 
         const imageName = data.getImageName();

@@ -1,5 +1,4 @@
-import { Canvas } from "../label/canvas.js";
-
+import { Manager } from "../manager.js";
 export class AnnotationRenderer {
     constructor() {
         this.canvas = document.createElement("canvas");
@@ -21,7 +20,11 @@ export class AnnotationRenderer {
         this.isDragging = false;
         this.lastRightMousePos = { x: 0, y: 0 };
 
-        const canvas = new Canvas();
+        const manager = new Manager();
+        const canvas = manager
+            .getToolInterface()
+            .getAnnotationPage()
+            .getCanvas();
         this.maskOpacity = canvas.getMaskOpacity();
 
         this.imageWidth = 0;

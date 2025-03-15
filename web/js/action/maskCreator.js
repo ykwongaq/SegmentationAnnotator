@@ -1,7 +1,5 @@
-import { Canvas } from "../panels/canvas.js";
-import { LabelCore } from "../label/labelCore.js";
-import { Mask } from "../data/index.js";
-import { ActionPanel } from "../panels/actionPanel.js";
+import { Category, Mask } from "../data/index.js";
+import { Manager } from "../manager.js";
 
 export class Prompt {
     static POSITIVE = 1;
@@ -32,6 +30,7 @@ export class Prompt {
     getImageY() {
         return this.imageY;
     }
+    s;
 
     toJson() {
         return {
@@ -75,14 +74,18 @@ export class MaskCreator {
      * @returns {Mask} Updated mask
      */
     updateMask() {
-        const canvas = new Canvas();
+        const manager = new Manager();
+        const canvas = manager
+            .getToolInterface()
+            .getAnnotationPage()
+            .getCanvas();
 
         if (this.prompts.length === 0) {
             canvas.showPromptedMask(null, this.prompts);
             return;
         }
 
-        const core = new LabelCore();
+        const core = manager.getCore();
         core.createPromptedMask(this.prompts, (annotation) => {
             this.mask = new Mask(annotation);
             canvas.showPromptedMask(this.mask, this.prompts);
@@ -99,15 +102,22 @@ export class MaskCreator {
         }
 
         // Check is user select the prompt mask category
-        const actionPanel = new ActionPanel();
+        const manager = new Manager();
+        const actionPanel = manager
+            .getToolInterface()
+            .getAnnotationPage()
+            .getActionPanel();
         const promptCategorySelector = actionPanel.getPromptCategorySelector();
         const selectedCategory = promptCategorySelector.getSelectedCategory();
         if (selectedCategory) {
             this.mask.setCategory(selectedCategory);
+        } else {
+            const category = new Category(Category.UNDEFINED_ID);
+            this.mask.setCategory(category);
         }
 
         // Record data
-        const core = new LabelCore();
+        const core = manager.getCore();
         core.recordData();
 
         // Add the mask into the data
@@ -115,7 +125,10 @@ export class MaskCreator {
         data.addMask(this.mask);
 
         // Update the visualization of canvas
-        const canvas = new Canvas();
+        const canvas = manager
+            .getToolInterface()
+            .getAnnotationPage()
+            .getCanvas();
         canvas.updateMasks();
 
         this.clearPrompts();

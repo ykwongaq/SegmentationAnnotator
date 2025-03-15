@@ -5,6 +5,7 @@ import { Slider } from "../util/slider.js";
 import { ActionManager } from "../action/actionManager.js";
 import { GeneralPopManager } from "../util/generalPopManager.js";
 import { LabelCore } from "../label/labelCore.js";
+import { Manager } from "../manager.js";
 
 export class LabelPanel {
     static TYPE_HEALTHY = 0;
@@ -12,11 +13,6 @@ export class LabelPanel {
     static TYPE_DEAD = 2;
 
     constructor(dom) {
-        if (LabelPanel.instance) {
-            return LabelPanel.instance;
-        }
-        LabelPanel.instance = this;
-
         this.dom = dom;
 
         // Opacity Setting
@@ -70,8 +66,12 @@ export class LabelPanel {
 
     initOpacitySlider() {
         this.opacitySlider.addEventListener("input", function (event) {
+            const manager = new Manager();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             const opacity = this.value / 100;
-            const canvas = new Canvas(null);
             canvas.setOpacity(opacity);
         });
     }
@@ -89,8 +89,13 @@ export class LabelPanel {
                 this.value = 0;
             }
 
+            const manager = new Manager();
+
             const opacity = this.value / 100;
-            const canvas = new Canvas(null);
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.setOpacity(opacity);
         });
     }
@@ -99,7 +104,11 @@ export class LabelPanel {
         this.showMaskButton.checked = true;
         this.showMaskButton.addEventListener("click", function () {
             const showMask = this.checked;
-            const canvas = new Canvas();
+            const manager = new Manager();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.setShouldShowMask(showMask);
         });
 
@@ -134,13 +143,17 @@ export class LabelPanel {
     }
 
     initStatusButtons() {
+        const manager = new Manager();
         for (const radio of this.categoryTypeRadioButtons) {
             radio.addEventListener("change", () => {
                 const value = parseInt(radio.value);
                 this.currentType = value;
                 this.updateCategoryButtons();
 
-                const actionPanel = new ActionPanel();
+                const actionPanel = manager
+                    .getToolInterface()
+                    .getAnnotationPage()
+                    .getActionPanel();
                 actionPanel.updateCategoryButtons();
             });
         }
@@ -174,7 +187,7 @@ export class LabelPanel {
 
             // Prepare the record for history manager
             const categoryManager = new CategoryManager();
-            const success = categoryManager.addCoralCategory(labelName);
+            const success = categoryManager.addCategory(labelName);
             if (!success) {
                 // Cannot add the category because the category name is duplicated
                 const generalPopManager = new GeneralPopManager();
@@ -192,7 +205,11 @@ export class LabelPanel {
             this.updateCategoryButtons();
             this.addCategoryInput.value = "";
 
-            const actionPanel = new ActionPanel();
+            const manager = new Manager();
+            const actionPanel = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getActionPanel();
             actionPanel.updateCategoryButtons();
         });
 
@@ -236,23 +253,7 @@ export class LabelPanel {
         const categoryManager = new CategoryManager();
 
         // Get the category list based on the current type
-        let categoryList = [];
-        if (this.currentType === LabelPanel.TYPE_HEALTHY) {
-            categoryList = categoryManager.getCategoryListByStatus(
-                CategoryManager.STATUS_HEALTHY
-            );
-        } else if (this.currentType === LabelPanel.TYPE_BLEACHED) {
-            categoryList = categoryManager.getCategoryListByStatus(
-                CategoryManager.STATUS_BLEACHED
-            );
-        } else if (this.currentType === LabelPanel.TYPE_DEAD) {
-            categoryList = categoryManager.getCategoryListByStatus(
-                CategoryManager.STATUS_DEAD
-            );
-        } else {
-            console.error("Invalid category type: ", this.currentType);
-            return;
-        }
+        let categoryList = categoryManager.getCategoryList();
 
         // Create category item for each category
         for (const category of categoryList) {
@@ -304,58 +305,6 @@ export class LabelPanel {
             this.categoryDropDownMenu.style.left = `${event.clientX}px`;
             this.categoryDropDownMenu.style.top = `${event.clientY}px`;
 
-            // Create rename button
-            // If the category is a coral, then user can only rename the coral
-            // at the healthy status
-            if (
-                !category.isCoral() ||
-                (category.isCoral() && category.isHealthy())
-            ) {
-                const renameButton = document
-                    .importNode(this.categoryMenuButtonTemplate.content, true)
-                    .querySelector("button");
-                renameButton.textContent = "Rename";
-                renameButton.addEventListener("click", (event) => {
-                    // When the rename button is clicked, hide the menu
-                    this.categoryDropDownMenu.style.display = "none";
-
-                    // The text label will become a input text box for user input
-                    const originalName = labelText.innerHTML;
-                    labelText.contentEditable = true;
-                    labelText.focus();
-
-                    // Select the text
-                    const range = document.createRange();
-                    const selection = window.getSelection();
-                    range.selectNodeContents(labelText);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-
-                    // Add event listener for keydown
-                    let enterPressed = false;
-                    labelText.addEventListener("keydown", (event) => {
-                        if (event.key === "Enter") {
-                            event.preventDefault();
-                            enterPressed = true;
-                            this.renameCategory(labelText, category);
-                        }
-                    });
-                    labelText.addEventListener("blur", (event) => {
-                        if (enterPressed) {
-                            enterPressed = false;
-                            return;
-                        }
-                        // When user click outside the text box,
-                        // Remove the event listener and make the name remain unchange
-                        labelText.removeEventListener("keydown", () => {});
-                        labelText.removeEventListener("blur", () => {});
-                        labelText.innerHTML = originalName;
-                        labelText.contentEditable = false;
-                    });
-                });
-                this.categoryDropDownMenu.appendChild(renameButton);
-            }
-
             // Create delete button
             const deleteButton = document
                 .importNode(this.categoryMenuButtonTemplate.content, true)
@@ -376,7 +325,8 @@ export class LabelPanel {
             const newStatus = value === "1" ? 0 : 1;
             maskHideButton.setAttribute("value", newStatus);
 
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             const data = core.getData();
             const masks = data.getMasks();
 
@@ -388,12 +338,16 @@ export class LabelPanel {
                 }
             }
 
-            const canvas = new Canvas();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.updateMasks();
         });
 
         // Activate the button based on the mask status
-        const core = new LabelCore();
+        const manager = new Manager();
+        const core = manager.getCore();
         const data = core.getData();
         const masks = data.getMasks();
         for (const mask of masks) {
@@ -417,21 +371,6 @@ export class LabelPanel {
             this.categoryDropDownMenu.style.display = "block";
             this.categoryDropDownMenu.style.left = `${event.clientX}px`;
             this.categoryDropDownMenu.style.top = `${event.clientY}px`;
-
-            // Create rename button
-            // If the category is a coral, then user can only rename the coral
-            // at the healthy status
-            if (
-                !category.isCoral() ||
-                (category.isCoral() && category.isHealthy())
-            ) {
-                const renameButton = document
-                    .importNode(this.categoryMenuButtonTemplate.content, true)
-                    .querySelector("button");
-                renameButton.textContent = "Rename";
-                this.initRenameButton(renameButton, category);
-                this.categoryDropDownMenu.appendChild(renameButton);
-            }
 
             // Create delete button
 
@@ -457,43 +396,13 @@ export class LabelPanel {
         deleteButton.addEventListener("click", async (event) => {
             event.preventDefault();
 
-            // Cannot delete a dead coral category
-            if (category.isCoral() && category.isDead()) {
-                const generalPopManager = new GeneralPopManager();
-                generalPopManager.clear();
-                generalPopManager.updateLargeText("Warning");
-                generalPopManager.updateText(
-                    "Cannot delete a dead coral category."
-                );
-                generalPopManager.addButton("ok", "OK", () => {
-                    generalPopManager.hide();
-                });
-                generalPopManager.show();
-                return;
-            }
-
             // To delete a category, make sure that the category
             // is not used by any mask
 
             // Check is the category is used in current image
-            const core = new LabelCore();
+            const manager = new Manager();
+            const core = manager.getCore();
             let imageIds = await core.getImageIdsByCategory(category);
-
-            // If the category is a coral, also need to check
-            // other status of the coral.
-            const isCoral = category.isCoral();
-            if (isCoral) {
-                const otherStatusCategories =
-                    category.getCategoriesOfOtherStatus();
-                for (const otherCategory of otherStatusCategories) {
-                    const otherImageIds = await core.getImageIdsByCategory(
-                        otherCategory
-                    );
-                    for (const id of otherImageIds) {
-                        imageIds.add(id);
-                    }
-                }
-            }
 
             // Sort the image ids
             imageIds = Array.from(imageIds).sort();
@@ -506,11 +415,6 @@ export class LabelPanel {
                 message +=
                     "\nPlease remove the annotation before deleting the category.";
 
-                if (isCoral) {
-                    message +=
-                        "\n\nNote: The category is a coral. Please also remove the masks of other status of the coral.";
-                }
-
                 const generalPopManager = new GeneralPopManager();
                 generalPopManager.clear();
                 generalPopManager.updateLargeText("Warning");
@@ -522,22 +426,14 @@ export class LabelPanel {
             } else {
                 // Delete the category
                 const categoryManager = new CategoryManager();
-
-                const categoriesToDelete = [category];
-                if (isCoral) {
-                    // If the category is a coral, also delete the other status
-                    const otherStatusCategories =
-                        category.getCategoriesOfOtherStatus();
-                    for (const otherCategory of otherStatusCategories) {
-                        categoriesToDelete.push(otherCategory);
-                    }
-                }
-
-                categoryManager.removeCategories(categoriesToDelete);
+                categoryManager.removeCategory(category);
 
                 this.updateCategoryButtons();
 
-                const actionPanel = new ActionPanel();
+                const actionPanel = manager
+                    .getToolInterface()
+                    .getAnnotationPage()
+                    .getActionPanel();
                 actionPanel.updateCategoryButtons();
             }
         });
@@ -572,31 +468,17 @@ export class LabelPanel {
             return;
         }
 
-        // Check if the input starts with "Bleached"
-        if (
-            category.isCoral() &&
-            newName.toLowerCase().startsWith("bleached")
-        ) {
-            const generalPopManager = new GeneralPopManager();
-            generalPopManager.clear();
-            generalPopManager.updateLargeText("Warning");
-            generalPopManager.updateText(
-                "The category name cannot start with 'Bleached'."
-            );
-            generalPopManager.addButton("ok", "OK", () => {
-                generalPopManager.hide();
-            });
-            generalPopManager.show();
-            return;
-        }
-
         // Rename the category
         const categoryManager = new CategoryManager();
         categoryManager.renameCategory(category, newName);
 
         this.updateCategoryButtons();
 
-        const actionPanel = new ActionPanel();
+        const manager = new Manager();
+        const actionPanel = manager
+            .getToolInterface()
+            .getAnnotationPage()
+            .getActionPanel();
         actionPanel.updateCategoryButtons();
     }
 

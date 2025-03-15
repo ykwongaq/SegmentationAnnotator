@@ -1,5 +1,6 @@
 import { Canvas } from "./canvas.js";
 import { ActionManager } from "../action/actionManager.js";
+import { Manager } from "../manager.js";
 
 export class ViewPanel {
     constructor(dom) {
@@ -22,21 +23,33 @@ export class ViewPanel {
 
     initZoomInButton() {
         this.zoomInButton.addEventListener("click", () => {
-            const canvas = new Canvas();
+            const manager = new Manager();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.zoomIn();
         });
     }
 
     initZoomOutButton() {
         this.zoomOutButton.addEventListener("click", () => {
-            const canvas = new Canvas();
+            const manager = new Manager();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.zoomOut();
         });
     }
 
     initResetViewPointButton() {
         this.resetViewPointButton.addEventListener("click", () => {
-            const canvas = new Canvas();
+            const manager = new Manager();
+            const canvas = manager
+                .getToolInterface()
+                .getAnnotationPage()
+                .getCanvas();
             canvas.resetViewpoint();
         });
 
