@@ -6,7 +6,8 @@ from tkinter import Tk, filedialog, messagebox
 from .embedding import EmbeddingGenerator
 
 # from .maskEiditor import MaskEidtor
-from .maskCreator import MaskCreator, Prompt
+from .mask.maskCreator import MaskCreator
+from .mask.prompt import Prompt
 from .util.general import get_resource_path
 
 from .project import (
@@ -183,7 +184,7 @@ class Server:
     def load_project(self, project_path: str):
         if project_path is None:
             project_path = ProjectCreator.TEMP_PROJECT_FILE
-            
+
         self.logger.info(f"Loading project from {project_path} ...")
         project_loader = ProjectLoader()
 
