@@ -4,7 +4,7 @@ import numpy as np
 import onnxruntime as ort
 
 from typing import Dict, List
-from .segment_anything.utils.transforms import ResizeLongestSide
+from .transforms import ResizeLongestSide
 
 
 class Prompt:

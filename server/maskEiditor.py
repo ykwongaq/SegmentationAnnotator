@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import onnxruntime as ort
 
-from .segment_anything.utils.transforms import ResizeLongestSide
+from .transforms import ResizeLongestSide
 
 
 class MaskEidtor:
