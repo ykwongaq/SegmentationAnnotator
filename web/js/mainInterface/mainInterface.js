@@ -24,7 +24,7 @@ export class MainInterface {
         });
 
         this.quickStartButton.addEventListener("click", () => {
-            navigateTo("quickStart.html");
+            navigateTo("quickstart.html");
         });
     }
 }

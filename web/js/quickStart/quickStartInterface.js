@@ -12,6 +12,8 @@ import { GeneralPopManager } from "../util/generalPopManager.js";
 import { AnnotationPage } from "../pages/index.js";
 import { NavigationBarQuickStart } from "./panels/navigationBarQuickStart.js";
 import { LoadingPopManager } from "../util/loadingPopManager.js";
+import { navigateTo } from "../util/navigate.js";
+
 export class QuickStartInterface {
     constructor() {
         this.core = null;
