@@ -35,6 +35,7 @@ export class NavigationBarQuickStart extends NavigationBar {
     }
 
     init() {
+        super.init();
         this.initLabelButton();
         this.initExportButton();
         this.initSave();
