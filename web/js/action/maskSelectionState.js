@@ -34,6 +34,7 @@ export class MaskSelectionState extends ActionState {
                 } else {
                     maskSelector.selectMask(mask);
                 }
+                mask.setModified(true);
             }
         }
 

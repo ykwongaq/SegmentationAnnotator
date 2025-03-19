@@ -16,6 +16,16 @@ export class Mask {
         this.area = annotation["area"];
         this.width = annotation["segmentation"]["size"][1];
         this.height = annotation["segmentation"]["size"][0];
+        this.isModified_ = false;
+        this.middlePoint = null;
+    }
+
+    isModified() {
+        return this.isModified_;
+    }
+
+    setModified(isModified) {
+        this.isModified_ = isModified;
     }
 
     getId() {
@@ -54,6 +64,7 @@ export class Mask {
 
     setShouldDisplay(shouldDisplay) {
         this.shouldDisplay_ = shouldDisplay;
+        this.setModified(true);
     }
 
     getDecodedMask() {
@@ -81,6 +92,10 @@ export class Mask {
     }
 
     getMiddlePoint() {
+        if (this.middlePoint) {
+            return this.middlePoint;
+        }
+
         const mask = this.getDecodedMask();
         let x_sum = 0;
         let y_sum = 0;
@@ -100,6 +115,9 @@ export class Mask {
 
         const middle_x = Math.floor(x_sum / count);
         const middle_y = Math.floor(y_sum / count);
+
+        this.middlePoint = [middle_x, middle_y];
+
         return [middle_x, middle_y];
     }
 

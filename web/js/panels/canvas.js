@@ -1,13 +1,28 @@
 import { ActionManager } from "../action/actionManager.js";
-import { Mask } from "../data/index.js";
+import { Mask, Data } from "../data/index.js";
 import { Prompt } from "../action/maskCreator.js";
+
 export class Canvas {
     constructor(dom) {
         this.canvas = dom;
         this.ctx = this.canvas.getContext("2d");
 
+        /** @type {Data} */
         this.data = null;
 
+        // Canvas for segmentation visualization
+        this.maskCanvas = document.createElement("canvas");
+        this.maskCtx = this.maskCanvas.getContext("2d", {
+            willReadFrequently: true,
+        });
+        this.borderCanvas = document.createElement("canvas");
+        this.borderCtx = this.borderCanvas.getContext("2d");
+        this.textCanvas = document.createElement("canvas");
+        this.textCtx = this.textCanvas.getContext("2d");
+        /** @type {Set<Mask>}*/
+        this.previousMasks = new Set();
+
+        // Final imags that we draw from
         this.imageCache = new Image();
         this.maskCache = new Image();
         this.textCache = new Image();
@@ -42,7 +57,6 @@ export class Canvas {
     init() {
         this.enableZoom();
         this.enableDrag();
-        this.enableEditting();
         this.enableWindowResize();
         this.enableMaskSelection();
     }
@@ -99,8 +113,6 @@ export class Canvas {
             event.preventDefault();
         });
     }
-
-    enableEditting() {}
 
     enableWindowResize() {
         window.addEventListener("resize", () => {
@@ -168,6 +180,8 @@ export class Canvas {
 
     showData(data) {
         this.data = data;
+
+        this.previousMasks.clear();
         const imagePath = this.data.getImagePath();
         if (!imagePath) {
             console.error("Image path is not valid: ", imagePath);
@@ -178,6 +192,16 @@ export class Canvas {
         this.imageCache.onload = () => {
             this.imageWidth = this.data.getImageWidth();
             this.imageHeight = this.data.getImageHeight();
+
+            this.maskCanvas.width = this.imageWidth;
+            this.maskCanvas.height = this.imageHeight;
+
+            this.borderCanvas.width = this.imageWidth;
+            this.borderCanvas.height = this.imageHeight;
+
+            this.textCanvas.width = this.imageWidth;
+            this.textCanvas.height = this.imageHeight;
+
             this.resetViewpoint();
             this.updateMasks();
             this.draw();
@@ -238,80 +262,100 @@ export class Canvas {
         window.requestAnimationFrame(this.draw);
     };
 
+    /**
+     * Update the visualization of segmentation masks. <br/>
+     *
+     * Visualization include the segmentation area, boundary, and text. <br/>
+     *
+     * To improve the efficiency, we only update the visualization of the modified masks. <br/>
+     */
     updateMasks() {
-        this.drawMasks();
-        this.drawBorderes();
-        this.drawTexts();
+        const incomingMasks = this.data.getMasks();
+
+        // First, we remove the outdated masks
+        const outdatedMasks = this.detectedOutdatedMasks();
+
+        // We also remove the masks that should not be displayed
+        for (const mask of incomingMasks) {
+            if (!mask.shouldDisplay()) {
+                outdatedMasks.add(mask);
+            }
+        }
+
+        for (const mask of outdatedMasks) {
+            this.removeMask(mask);
+        }
+
+        // Then, we update the modified masks
+        const renderMasks = this.detectRenderMasks();
+        for (const mask of renderMasks) {
+            this.drawMask(mask);
+        }
+
+        this.maskCache.src = this.maskCanvas.toDataURL();
+        this.borderCache.src = this.borderCanvas.toDataURL();
+        this.textCache.src = this.textCanvas.toDataURL();
+
+        // Finally, we reset the modificaiton status of the masks
+        for (const mask of incomingMasks) {
+            mask.setModified(false);
+        }
+        this.previousMasks.clear();
+        for (const mask of incomingMasks) {
+            this.previousMasks.add(mask);
+        }
     }
 
-    drawMasks() {
-        const maskCanvas = document.createElement("canvas");
-        const maskCtx = maskCanvas.getContext("2d");
-        maskCanvas.width = this.imageWidth;
-        maskCanvas.height = this.imageHeight;
+    /**
+     * Detect the outdated masks. <br/>
+     * @returns {Set<Mask>} The list of outdated masks
+     */
+    detectedOutdatedMasks() {
+        // There are three type of modification: add, delete, and update
+        // Outdated masks is the masks that is updated, and deleted
+        const outdatedMasks = new Set();
 
-        // Step 1: Create a buffer to track which mask is currently “winning” for each pixel.
-        // If your mask IDs can be large, store them in a larger typed array. Here we assume
-        // an integer up to the number of masks. 0 → no mask.
-        const pixelMaskIndex = new Uint16Array(
-            this.imageWidth * this.imageHeight
-        );
-
-        // We’ll keep track of each visible mask’s integer ID and color.
-        // (In practice, you might store them in an array or a map).
-        const masks = this.data.getMasks().filter((m) => m.shouldDisplay());
-        // For example, assign each mask an ID from 1..N:
-        // (You could also store them in a dictionary if needed.)
-        masks.forEach((mask, idx) => {
-            mask._maskId = idx + 1; // or any unique number you like
-        });
-
-        // Step 2: Fill pixelMaskIndex by iterating over each mask’s data.
-        // If a mask pixel is set to 1, we overwrite that pixel’s index with the mask’s ID.
-        // This effectively means “the last mask drawn wins” if multiple overlap.
-        for (const mask of masks) {
-            const maskData = mask.getDecodedMask(); // Uint8Array of 0/1
-            const maskId = mask._maskId;
-
-            for (let i = 0; i < maskData.length; i++) {
-                if (maskData[i] === 1) {
-                    pixelMaskIndex[i] = maskId;
-                }
+        // Detect updated masks
+        for (const mask of this.previousMasks) {
+            if (mask.isModified()) {
+                outdatedMasks.add(mask);
             }
         }
 
-        // Step 3: We now have, for every pixel, a nonzero mask ID if it’s covered by some mask.
-        // Create an ImageData for the entire image:
-        const imageData = maskCtx.createImageData(
-            this.imageWidth,
-            this.imageHeight
-        );
-        const data = imageData.data; // Uint8ClampedArray
-
-        // Precompute the colors for each mask’s ID (so we don’t parse hex repeatedly).
-        // e.g., user “maskId => [R, G, B]” mapping:
-        const maskColors = {};
-        for (const mask of masks) {
-            const [r, g, b] = this.hexToRGB(mask.getMaskColor());
-            maskColors[mask._maskId] = [r, g, b];
-        }
-
-        // Step 4: Single pass: fill RGBA for each pixel based on which mask ID is stored.
-        for (let i = 0; i < pixelMaskIndex.length; i++) {
-            const id = pixelMaskIndex[i];
-            if (id !== 0) {
-                const color = maskColors[id];
-                const index = i * 4;
-                data[index] = color[0];
-                data[index + 1] = color[1];
-                data[index + 2] = color[2];
-                data[index + 3] = 255; // fully opaque
+        // Detect deleted masks
+        // For deleted masks, we detect is there any mask that is not included in the incoming masks
+        const incomingMasks = this.data.getMasks();
+        for (const mask of this.previousMasks) {
+            if (!incomingMasks.includes(mask)) {
+                outdatedMasks.add(mask);
             }
         }
 
-        maskCtx.putImageData(imageData, 0, 0);
-        this.maskCache = new Image();
-        this.maskCache.src = maskCanvas.toDataURL();
+        return outdatedMasks;
+    }
+
+    detectRenderMasks() {
+        // There are three type of modificaiton: add, delete, and update
+        // Masks that need to render is the masks that is added, and updated.
+        const modifiedMasks = new Set();
+        const incomingMasks = this.data.getMasks();
+
+        // Detect updated maks
+        for (const mask of incomingMasks) {
+            if (mask.isModified()) {
+                modifiedMasks.add(mask);
+            }
+        }
+
+        // Detect added masks
+        for (const mask of incomingMasks) {
+            if (!this.previousMasks.has(mask)) {
+                modifiedMasks.add(mask);
+            }
+        }
+
+        // For add masks, we detect is there any new mask that is not included in the
+        return modifiedMasks;
     }
 
     /**
@@ -343,21 +387,13 @@ export class Canvas {
                     const y = (i / width) | 0; // integer division
 
                     // Compare neighbors
-                    // left
-                    if (x > 0 && maskData[i - 1] === 0) {
-                        this._drawDot(borderCtx, x, y, radius, borderColor);
-                    }
-                    // right
-                    if (x < width - 1 && maskData[i + 1] === 0) {
-                        this._drawDot(borderCtx, x, y, radius, borderColor);
-                    }
-                    // up
-                    if (y > 0 && maskData[i - width] === 0) {
-                        this._drawDot(borderCtx, x, y, radius, borderColor);
-                    }
-                    // down
-                    if (y < this.imageHeight - 1 && maskData[i + width] === 0) {
-                        this._drawDot(borderCtx, x, y, radius, borderColor);
+                    if (
+                        (x > 0 && maskData[i - 1] === 0) || // Left
+                        (x < width - 1 && maskData[i + 1] === 0) || // Right
+                        (y > 0 && maskData[i - width] === 0) || // Up
+                        (y < this.imageHeight - 1 && maskData[i + width] === 0) // Down
+                    ) {
+                        this.drawDot(borderCtx, x, y, radius, borderColor);
                     }
                 }
             }
@@ -370,7 +406,7 @@ export class Canvas {
     /**
      * Simple helper for drawing a small circle (dot) on the border canvas.
      */
-    _drawDot(ctx, x, y, radius, color) {
+    drawDot(ctx, x, y, radius, color) {
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, 2 * Math.PI);
         ctx.fillStyle = color;
@@ -378,64 +414,251 @@ export class Canvas {
         ctx.closePath();
     }
 
-    /**
-     * Example optimization for text rendering: do a single pass for all visible masks.
-     */
-    drawTexts() {
-        const textCanvas = document.createElement("canvas");
-        const textCtx = textCanvas.getContext("2d");
-        textCanvas.width = this.imageWidth;
-        textCanvas.height = this.imageHeight;
+    removeDot(ctx, x, y, radius) {
+        ctx.save();
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.closePath();
+        ctx.restore();
+    }
 
-        const masks = this.data.getMasks();
-        for (const mask of masks) {
-            if (!mask.shouldDisplay()) {
+    removeMask(mask) {
+        this.removeSegmentationArea(mask);
+        this.removeBorder(mask);
+        this.removeText(mask);
+    }
+
+    removeSegmentationArea(mask) {
+        const width = this.imageWidth;
+        const height = this.imageHeight;
+
+        const maskData = mask.getDecodedMask();
+
+        const imageData = this.maskCtx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+
+        const includedPixel = new Set();
+        for (let i = 0; i < maskData.length; i++) {
+            const maskValue = maskData[i];
+            if (maskValue == 0) {
                 continue;
             }
 
-            const middle_pixel = mask.getMiddlePoint();
-            const category = mask.getCategory();
-            const label_id = category.getCategoryId();
-            const color = category.getMaskColor();
-            const fontColor = category.getTextColor();
+            includedPixel.add(i);
 
-            if (label_id !== -1) {
-                const fontSize = Math.min(
-                    Math.floor(
-                        Math.min(this.imageWidth, this.imageHeight) * 0.04
-                    ),
-                    40
-                );
+            const index = i * 4;
+            data[index] = 0;
+            data[index + 1] = 0;
+            data[index + 2] = 0;
+            data[index + 3] = 0; // fully transparent
+        }
+        this.maskCtx.putImageData(imageData, 0, 0);
 
-                const display_id = category.getIconName();
-                const fontBgRadius = fontSize * 0.7;
-
-                textCtx.beginPath();
-                textCtx.arc(
-                    middle_pixel[0] + fontBgRadius / 2,
-                    middle_pixel[1] - fontBgRadius / 2,
-                    fontBgRadius,
-                    0,
-                    Math.PI * 2
-                );
-                textCtx.strokeStyle = "#fff";
-                textCtx.lineWidth = 1;
-                textCtx.fillStyle = color;
-                textCtx.fill();
-                textCtx.stroke();
-                textCtx.closePath();
-
-                // Adjust font size based on string length
-                textCtx.font = `${
-                    fontSize / Math.max(display_id.length, 1)
-                }px Arial`;
-                textCtx.fillStyle = fontColor;
-                textCtx.fillText(display_id, middle_pixel[0], middle_pixel[1]);
+        // Check is there any other mask that is affected by this removal
+        const affectedMasks = new Set();
+        for (const otherMask of this.data.getMasks()) {
+            if (otherMask === mask) {
+                continue;
+            }
+            for (const i of includedPixel) {
+                if (otherMask.containPixel(i % width, (i / width) | 0)) {
+                    affectedMasks.add(otherMask);
+                }
             }
         }
 
-        this.textCache = new Image();
-        this.textCache.src = textCanvas.toDataURL();
+        // When there are affected masks, we need to redraw the segmentation area
+        for (const affectedMask of affectedMasks) {
+            this.drawSegmentationArea(affectedMask);
+        }
+    }
+
+    removeBorder(mask) {
+        const width = this.imageWidth;
+        const height = this.imageHeight;
+        const maskData = mask.getDecodedMask(); // Uint8Array of 0/1
+        const radius = Math.min(width, height) * 0.0015;
+
+        const borderPixels = new Set();
+        const affectedMasks = new Set();
+        for (let i = 0; i < maskData.length; i++) {
+            if (maskData[i] === 1) {
+                const x = i % width;
+                const y = (i / width) | 0;
+
+                if (
+                    (x > 0 && maskData[i - 1] === 0) ||
+                    (x < width - 1 && maskData[i + 1] === 0) ||
+                    (y > 0 && maskData[i - width] === 0) ||
+                    (y < height - 1 && maskData[i + width] === 0)
+                ) {
+                    this.removeDot(this.borderCtx, x, y, radius * 1.3);
+                    borderPixels.add(i);
+                }
+            }
+        }
+
+        // Check is there any other mask that is affected by this removal
+        for (const otherMask of this.data.getMasks()) {
+            if (otherMask === mask) {
+                continue;
+            }
+            for (const i of borderPixels) {
+                if (otherMask.containPixel(i % width, (i / width) | 0)) {
+                    affectedMasks.add(otherMask);
+                }
+            }
+        }
+
+        // When there are affected masks, we need to redraw the border
+        for (const affectedMask of affectedMasks) {
+            this.drawBorder(affectedMask);
+        }
+    }
+
+    removeText(mask) {
+        const middle_pixel = mask.getMiddlePoint();
+        const width = this.imageWidth;
+        const height = this.imageHeight;
+
+        const fontSize = Math.min(
+            Math.floor(Math.min(width, height) * 0.04),
+            40
+        );
+        const fontBgRadius = fontSize * 0.75;
+
+        this.removeDot(
+            this.textCtx,
+            middle_pixel[0] + fontBgRadius / 2,
+            middle_pixel[1] - fontBgRadius / 2,
+            fontBgRadius * 1.3
+        );
+
+        const affectedMasks = new Set();
+        for (const otherMask of this.data.getMasks()) {
+            if (otherMask === mask) {
+                continue;
+            }
+
+            const otherMiddlePixel = otherMask.getMiddlePoint();
+            const dx = middle_pixel[0] + fontBgRadius / 2 - otherMiddlePixel[0];
+            const dy = middle_pixel[1] - fontBgRadius / 2 - otherMiddlePixel[1];
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= fontBgRadius) {
+                affectedMasks.add(otherMask);
+            }
+        }
+
+        for (const affectedMask of affectedMasks) {
+            this.drawText(affectedMask);
+        }
+    }
+
+    drawMask(mask) {
+        this.drawSegmentationArea(mask);
+        this.drawBorder(mask);
+        this.drawText(mask);
+    }
+
+    drawSegmentationArea(mask) {
+        const width = this.imageWidth;
+        const height = this.imageHeight;
+
+        const maskData = mask.getDecodedMask();
+
+        const maskColor = this.hexToRGB(mask.getMaskColor());
+
+        const imageData = this.maskCtx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+
+        for (let i = 0; i < maskData.length; i++) {
+            const maskValue = maskData[i];
+            if (maskValue == 0) {
+                continue;
+            }
+
+            const index = i * 4;
+            data[index] = maskColor[0];
+            data[index + 1] = maskColor[1];
+            data[index + 2] = maskColor[2];
+            data[index + 3] = 255; // fully opaque
+        }
+
+        this.maskCtx.putImageData(imageData, 0, 0);
+    }
+
+    drawBorder(mask) {
+        const width = this.imageWidth;
+        const height = this.imageHeight;
+        const maskData = mask.getDecodedMask(); // Uint8Array of 0/1
+        const radius = Math.min(width, height) * 0.0015;
+
+        for (let i = 0; i < maskData.length; i++) {
+            if (maskData[i] === 1) {
+                const x = i % width;
+                const y = (i / width) | 0;
+
+                if (
+                    (x > 0 && maskData[i - 1] === 0) ||
+                    (x < width - 1 && maskData[i + 1] === 0) ||
+                    (y > 0 && maskData[i - width] === 0) ||
+                    (y < height - 1 && maskData[i + width] === 0)
+                ) {
+                    this.drawDot(
+                        this.borderCtx,
+                        x,
+                        y,
+                        radius,
+                        mask.getCategory().getBorderColor()
+                    );
+                }
+            }
+        }
+    }
+
+    drawText(mask) {
+        const middle_pixel = mask.getMiddlePoint();
+        const category = mask.getCategory();
+        const label_id = category.getCategoryId();
+        const color = category.getMaskColor();
+        const fontColor = category.getTextColor();
+        const width = this.imageWidth;
+        const height = this.imageHeight;
+
+        if (label_id === -1) {
+            return;
+        }
+
+        const fontSize = Math.min(
+            Math.floor(Math.min(width, height) * 0.04),
+            40
+        );
+        const fontBgRadius = fontSize * 0.7;
+
+        this.textCtx.beginPath();
+        this.textCtx.arc(
+            middle_pixel[0] + fontBgRadius / 2,
+            middle_pixel[1] - fontBgRadius / 2,
+            fontBgRadius,
+            0,
+            Math.PI * 2
+        );
+        this.textCtx.strokeStyle = "#fff";
+        this.textCtx.lineWidth = 1;
+        this.textCtx.fillStyle = color;
+        this.textCtx.fill();
+        this.textCtx.stroke();
+        this.textCtx.closePath();
+
+        const display_id = category.getIconName();
+        this.textCtx.font = `${
+            fontSize / Math.max(display_id.length, 1)
+        }px Arial`;
+        this.textCtx.fillStyle = fontColor;
+        this.textCtx.fillText(display_id, middle_pixel[0], middle_pixel[1]);
     }
 
     resetViewpoint() {

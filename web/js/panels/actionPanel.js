@@ -60,6 +60,7 @@ export class ActionPanel {
 
             for (const mask of selectedMasks) {
                 mask.setCategory(category);
+                mask.setModified(true);
             }
             maskSelector.clearSelection();
 
@@ -112,6 +113,7 @@ export class ActionPanel {
             const data = core.getData();
             for (const mask of selectedMasks) {
                 data.removeMask(mask);
+                mask.setModified(true);
             }
 
             // Clear the selection

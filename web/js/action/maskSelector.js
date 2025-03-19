@@ -35,6 +35,9 @@ export class MaskSelector {
     }
 
     clearSelection() {
+        for (const mask of this.selectedMasks) {
+            mask.setModified(true);
+        }
         this.selectedMasks.clear();
     }
 }

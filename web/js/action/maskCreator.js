@@ -123,6 +123,7 @@ export class MaskCreator {
         // Add the mask into the data
         const data = core.getData();
         data.addMask(this.mask);
+        this.mask.setModified(true);
 
         // Update the visualization of canvas
         const canvas = manager
