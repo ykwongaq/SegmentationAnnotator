@@ -255,7 +255,7 @@ export class Canvas {
         this.borderCache.src = this.maskDrawer.getBorderCanvas().toDataURL();
 
         for (const mask of this.data.getMasks()) {
-            mask.setModified(true);
+            mask.setModified(false);
         }
     }
 
