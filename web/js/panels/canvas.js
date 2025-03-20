@@ -3,6 +3,7 @@ import { Mask, Data } from "../data/index.js";
 import { Prompt } from "../action/maskCreator.js";
 import { MaskDrawer } from "../util/maskDrawer.js";
 import { hexToRGB } from "../util/color.js";
+import { Manager } from "../manager.js";
 
 export class Canvas {
     constructor(dom) {
@@ -45,6 +46,12 @@ export class Canvas {
             255 / 255
         }, 0.6)`;
         this.promptedMask = null;
+
+        // Retangle
+        this.showQuadrat = false;
+        this.isSelectingRectangle = false;
+        this.rectStartImagePixel = null;
+        this.rectEndImagePixel = null;
     }
 
     init() {
@@ -52,6 +59,7 @@ export class Canvas {
         this.enableDrag();
         this.enableWindowResize();
         this.enableMaskSelection();
+        this.enableDrawingRectangle();
     }
 
     enableZoom() {
@@ -238,6 +246,24 @@ export class Canvas {
             this.ctx.globalAlpha = 1.0;
         }
 
+        if (
+            this.isSelectingRectangle &&
+            this.rectStartImagePixel &&
+            this.rectEndImagePixel
+        ) {
+            this.drawRectangle(
+                this.rectStartImagePixel[0],
+                this.rectStartImagePixel[1],
+                this.rectEndImagePixel[0],
+                this.rectEndImagePixel[1],
+                {
+                    r: 255,
+                    g: 0,
+                    b: 0,
+                }
+            );
+        }
+
         window.requestAnimationFrame(this.draw);
     };
 
@@ -422,5 +448,168 @@ export class Canvas {
 
     getMaskOpacity() {
         return this.maskOpacity;
+    }
+
+    drawRectangle(imageX1, imageY1, imageX2, imageY2, rgb) {
+        const x = Math.min(imageX1, imageX2);
+        const y = Math.min(imageY1, imageY2);
+        const width = Math.abs(imageX1 - imageX2);
+        const height = Math.abs(imageY1 - imageY2);
+
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.rect(x, y, width, height);
+        this.ctx.fillStyle =
+            "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ", 0.3)";
+        this.ctx.strokeStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
+        this.ctx.lineWidth = 2;
+        this.ctx.fill();
+        this.ctx.stroke();
+        this.ctx.closePath();
+        this.ctx.restore();
+    }
+
+    setIsSelectingRectangle(isSelectingRectangle) {
+        this.isSelectingRectangle = isSelectingRectangle;
+    }
+
+    getIsSelectingRectangle() {
+        return this.isSelectingRectangle;
+    }
+
+    setStartRectPixel(imageX, imageY) {
+        this.rectStartImagePixel = [imageX, imageY];
+    }
+
+    setEndRectPixel(imageX, imageY) {
+        this.rectEndImagePixel = [imageX, imageY];
+    }
+
+    getStartRectPixel() {
+        return this.rectStartImagePixel;
+    }
+
+    getEndRectPixel() {
+        return this.rectEndImagePixel;
+    }
+
+    setShowQuadrat(showQuadrat) {
+        this.showQuadrat = showQuadrat;
+    }
+
+    drawRectangle(imageX1, imageY1, imageX2, imageY2, rgb) {
+        const x = Math.min(imageX1, imageX2);
+        const y = Math.min(imageY1, imageY2);
+        const width = Math.abs(imageX1 - imageX2);
+        const height = Math.abs(imageY1 - imageY2);
+
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.rect(x, y, width, height);
+        // this.ctx.fillStyle = "rgba(20, 145, 255, 0.3)"; // semi-transparent
+        // this.ctx.strokeStyle = "#1491ff"; // solid red border
+        this.ctx.fillStyle =
+            "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ", 0.3)";
+        this.ctx.strokeStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
+        this.ctx.lineWidth = 2;
+        this.ctx.fill();
+        this.ctx.stroke();
+        this.ctx.closePath();
+        this.ctx.restore();
+    }
+
+    enableDrawingRectangle() {
+        this.canvas.addEventListener("mousedown", (event) => {
+            event.preventDefault();
+
+            // Only left click is allowed
+            if (event.button !== 0) {
+                return;
+            }
+
+            let [canvasX, canvasY] = this.getMousePos(event);
+            canvasX = Math.floor(canvasX);
+            canvasY = Math.floor(canvasY);
+
+            let [imageX, imageY] = this.canvasPixelToImagePixel(
+                canvasX,
+                canvasY
+            );
+
+            const imageHeight = this.data.getImageHeight();
+            const imageWidth = this.data.getImageWidth();
+
+            if (
+                imageX < 0 ||
+                imageX >= imageWidth ||
+                imageY < 0 ||
+                imageY >= imageHeight
+            ) {
+                return;
+            }
+
+            const actionManager = new ActionManager();
+            actionManager.mouseDownPixel(imageX, imageY);
+        });
+
+        this.canvas.addEventListener("mouseup", (event) => {
+            event.preventDefault();
+
+            // Only left click is allowed
+            if (event.button !== 0) {
+                return;
+            }
+
+            if (!this.isSelectingRectangle) {
+                return;
+            }
+
+            let [canvasX, canvasY] = this.getMousePos(event);
+            canvasX = Math.floor(canvasX);
+            canvasY = Math.floor(canvasY);
+
+            let [imageX, imageY] = this.canvasPixelToImagePixel(
+                canvasX,
+                canvasY
+            );
+
+            const imageHeight = this.data.getImageHeight();
+            const imageWidth = this.data.getImageWidth();
+
+            // Clip the value of imageX and imageY to the image boundary
+            imageX = Math.max(0, Math.min(imageX, imageWidth - 1));
+            imageY = Math.max(0, Math.min(imageY, imageHeight - 1));
+
+            const actionManager = new ActionManager();
+            actionManager.mouseUpPixel(imageX, imageY);
+        });
+
+        this.canvas.addEventListener("mousemove", (event) => {
+            event.preventDefault();
+
+            // Only left click is allowed
+            if (event.button !== 0) {
+                return;
+            }
+
+            let [canvasX, canvasY] = this.getMousePos(event);
+            canvasX = Math.floor(canvasX);
+            canvasY = Math.floor(canvasY);
+
+            let [imageX, imageY] = this.canvasPixelToImagePixel(
+                canvasX,
+                canvasY
+            );
+
+            const imageHeight = this.data.getImageHeight();
+            const imageWidth = this.data.getImageWidth();
+
+            // Clip the value of imageX and imageY to the image boundary
+            imageX = Math.max(0, Math.min(imageX, imageWidth - 1));
+            imageY = Math.max(0, Math.min(imageY, imageHeight - 1));
+
+            const actionManager = new ActionManager();
+            actionManager.mouseMovePixel(imageX, imageY);
+        });
     }
 }

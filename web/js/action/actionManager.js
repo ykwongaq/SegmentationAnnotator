@@ -37,6 +37,18 @@ export class ActionManager {
         this.state.leftClickPixel(imageX, imageY);
     }
 
+    mouseDownPixel(imageX, imageY) {
+        this.state.mouseDownPixel(imageX, imageY);
+    }
+
+    mouseMovePixel(imageX, imageY) {
+        this.state.mouseMovePixel(imageX, imageY);
+    }
+
+    mouseUpPixel(imageX, imageY) {
+        this.state.mouseUpPixel(imageX, imageY);
+    }
+
     setState(stateId) {
         switch (stateId) {
             case ActionManager.STATE_SELECT_MASK:

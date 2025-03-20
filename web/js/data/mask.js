@@ -165,4 +165,14 @@ export class Mask {
         const annotation = JSON.parse(JSON.stringify(this.annotation));
         return new Mask(annotation);
     }
+
+    /**
+     *  Get the bounding box of the mask
+     * @returns {number[]} [x, y, width, height]
+     */
+    getBoundingBox() {
+        const boundingBox = this.annotation["bbox"];
+        // Convert the element into number
+        return boundingBox.map((element) => Number(element));
+    }
 }

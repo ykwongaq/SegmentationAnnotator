@@ -16,6 +16,8 @@ export class AnnotationCore extends Core {
         this.dataHistoryManager = new HistoryManager(
             AnnotationCore.DEFAULT_HISTORY_SIZE
         );
+
+        this.quadrat = null;
     }
 
     setData(data) {
