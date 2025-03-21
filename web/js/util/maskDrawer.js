@@ -2,11 +2,11 @@ import { Mask, Data } from "../data/index.js";
 import { hexToRGB } from "./color.js";
 
 export class MaskDrawer {
-    constructor() {
-        /** @type {Data} */
-        this.data = null;
+    constructor(optimized = true) {
         /** @type {Set<Mask>}*/
         this.previousMasks = new Set();
+        /** @type {Mask[]} */
+        this.incomingMasks = [];
 
         this.width = null;
         this.height = null;
@@ -19,27 +19,26 @@ export class MaskDrawer {
         this.borderCtx = this.borderCanvas.getContext("2d");
         this.textCanvas = document.createElement("canvas");
         this.textCtx = this.textCanvas.getContext("2d");
+
+        this.optimized = optimized;
     }
 
-    /**
-     *
-     * @param {Data} data
-     */
-    setData(data) {
-        this.data = data;
+    clearMemory() {
         this.previousMasks.clear();
+    }
 
-        this.width = this.data.getImageWidth();
-        this.height = this.data.getImageHeight();
+    setHeight(height) {
+        this.height = height;
+        this.maskCanvas.height = height;
+        this.borderCanvas.height = height;
+        this.textCanvas.height = height;
+    }
 
-        this.maskCanvas.width = this.width;
-        this.maskCanvas.height = this.height;
-
-        this.borderCanvas.width = this.width;
-        this.borderCanvas.height = this.height;
-
-        this.textCanvas.width = this.width;
-        this.textCanvas.height = this.height;
+    setWidth(width) {
+        this.width = width;
+        this.maskCanvas.width = width;
+        this.borderCanvas.width = width;
+        this.textCanvas.width = width;
     }
 
     /**
@@ -49,14 +48,31 @@ export class MaskDrawer {
      *
      * To improve the efficiency, we only update the visualization of the modified masks. <br/>
      */
-    updateMasks() {
-        const incomingMasks = this.data.getMasks();
+    updateMasks(incomingMasks) {
+        this.incomingMasks = incomingMasks;
 
+        if (this.optimized) {
+            this.updateMaskOptimized();
+        } else {
+            // Clear all the canvas, and draw all the masks
+            this.maskCtx.clearRect(0, 0, this.width, this.height);
+            this.borderCtx.clearRect(0, 0, this.width, this.height);
+            this.textCtx.clearRect(0, 0, this.width, this.height);
+
+            for (const mask of this.incomingMasks) {
+                this.drawMask(mask);
+            }
+        }
+
+        this.incomingMasks = [];
+    }
+
+    updateMaskOptimized() {
         // First, we remove the outdated masks
         const outdatedMasks = this.detectedOutdatedMasks();
 
         // We also remove the masks that should not be displayed
-        for (const mask of incomingMasks) {
+        for (const mask of this.incomingMasks) {
             if (!mask.shouldDisplay()) {
                 outdatedMasks.add(mask);
             }
@@ -73,7 +89,7 @@ export class MaskDrawer {
         }
 
         this.previousMasks.clear();
-        for (const mask of incomingMasks) {
+        for (const mask of this.incomingMasks) {
             this.previousMasks.add(mask);
         }
     }
@@ -108,9 +124,8 @@ export class MaskDrawer {
 
         // Detect deleted masks
         // For deleted masks, we detect is there any mask that is not included in the incoming masks
-        const incomingMasks = this.data.getMasks();
         for (const mask of this.previousMasks) {
-            if (!incomingMasks.includes(mask)) {
+            if (!this.incomingMasks.includes(mask)) {
                 outdatedMasks.add(mask);
             }
         }
@@ -122,17 +137,16 @@ export class MaskDrawer {
         // There are three type of modificaiton: add, delete, and update
         // Masks that need to render is the masks that is added, and updated.
         const modifiedMasks = new Set();
-        const incomingMasks = this.data.getMasks();
 
         // Detect updated maks
-        for (const mask of incomingMasks) {
+        for (const mask of this.incomingMasks) {
             if (mask.isModified()) {
                 modifiedMasks.add(mask);
             }
         }
 
         // Detect added masks
-        for (const mask of incomingMasks) {
+        for (const mask of this.incomingMasks) {
             if (!this.previousMasks.has(mask)) {
                 modifiedMasks.add(mask);
             }
@@ -197,7 +211,7 @@ export class MaskDrawer {
 
         // Check is there any other mask that is affected by this removal
         const affectedMasks = new Set();
-        for (const otherMask of this.data.getMasks()) {
+        for (const otherMask of this.incomingMasks) {
             if (otherMask === mask) {
                 continue;
             }
@@ -240,7 +254,7 @@ export class MaskDrawer {
         }
 
         // Check is there any other mask that is affected by this removal
-        for (const otherMask of this.data.getMasks()) {
+        for (const otherMask of this.incomingMasks) {
             if (otherMask === mask) {
                 continue;
             }
@@ -276,7 +290,7 @@ export class MaskDrawer {
         );
 
         const affectedMasks = new Set();
-        for (const otherMask of this.data.getMasks()) {
+        for (const otherMask of this.incomingMasks) {
             if (otherMask === mask) {
                 continue;
             }

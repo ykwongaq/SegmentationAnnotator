@@ -193,7 +193,10 @@ export class Canvas {
             this.imageWidth = this.data.getImageWidth();
             this.imageHeight = this.data.getImageHeight();
 
-            this.maskDrawer.setData(this.data);
+            // this.maskDrawer.setData(this.data);
+            this.maskDrawer.clearMemory();
+            this.maskDrawer.setHeight(this.imageHeight);
+            this.maskDrawer.setWidth(this.imageWidth);
 
             this.resetViewpoint();
             this.updateMasks();
@@ -275,7 +278,7 @@ export class Canvas {
      * To improve the efficiency, we only update the visualization of the modified masks. <br/>
      */
     updateMasks() {
-        this.maskDrawer.updateMasks();
+        this.maskDrawer.updateMasks(this.data.getMasks());
         this.maskCache.src = this.maskDrawer.getMaskCanvas().toDataURL();
         this.textCache.src = this.maskDrawer.getTextCanvas().toDataURL();
         this.borderCache.src = this.maskDrawer.getBorderCanvas().toDataURL();
