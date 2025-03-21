@@ -27,6 +27,17 @@ export class MaskDrawer {
         this.previousMasks.clear();
     }
 
+    clear() {
+        // By re-assiging the width, the canvas will be cleared
+        this.maskCanvas.width = this.maskCanvas.width;
+        this.borderCanvas.width = this.borderCanvas.width;
+        this.textCanvas.width = this.textCanvas.width;
+        this.width = null;
+        this.height = null;
+        this.previousMasks.clear();
+        this.incomingMasks = [];
+    }
+
     setHeight(height) {
         this.height = height;
         this.maskCanvas.height = height;
