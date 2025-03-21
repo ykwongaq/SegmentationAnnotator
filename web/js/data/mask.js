@@ -175,4 +175,34 @@ export class Mask {
         // Convert the element into number
         return boundingBox.map((element) => Number(element));
     }
+
+    /**
+     * Get the mask of the region
+     * @param {Rectangle} rectangle The region to get the mask
+     * @returns {Uint8Array} The decoded mask of the region
+     */
+    getRegionalDecodedMask(rectangle) {
+        const mask = this.getDecodedMask();
+        const x1 = rectangle.getX1();
+        const y1 = rectangle.getY1();
+        const x2 = rectangle.getX2();
+        const y2 = rectangle.getY2();
+
+        const width = this.getWidth();
+
+        const regionWidth = Math.abs(x2 - x1);
+        const regionHeight = Math.abs(y2 - y1);
+
+        const regionalMask = new Uint8Array(regionWidth * regionHeight);
+        let index = 0;
+        for (let row = y1; row <= y2; row++) {
+            const startIdx = row * width + x1;
+            for (let col = 0; col < regionWidth; col++) {
+                regionalMask[index] = mask[startIdx + col];
+                index++;
+            }
+        }
+
+        return regionalMask;
+    }
 }
