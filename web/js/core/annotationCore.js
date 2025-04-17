@@ -5,7 +5,9 @@ import { Manager } from "../manager.js";
 import { Record, HistoryManager } from "../action/historyManager.js";
 import { AnnotationRenderer } from "../panels/annotationRenderer.js";
 import { LoadingPopManager } from "../util/loadingPopManager.js";
+import { GeneralPopManager } from "../util/generalPopManager.js";
 import { Data } from "../data/index.js";
+import { FileDialogRequest } from "../requests/filedialogRequest.js";
 
 export class AnnotationCore extends Core {
     static DEFAULT_HISTORY_SIZE = 10;
@@ -273,5 +275,85 @@ export class AnnotationCore extends Core {
                     this.popUpError(error);
                 }
             });
+    }
+
+    importJson(callBack, errorCallBack) {
+        // Ask user to confirm impot Json
+        const generalPopManager = new GeneralPopManager();
+        generalPopManager.clear();
+        generalPopManager.updateLargeText("Import JSON");
+        generalPopManager.updateText(
+            "Importing JSON will overwrite all the annotation. Are you sure?"
+        );
+        generalPopManager.addButton("cancel-button", "Cancel", () => {
+            generalPopManager.hide();
+        });
+        generalPopManager.addButton("import-button", "Import", () => {
+            generalPopManager.hide();
+            this.importJson_(callBack, errorCallBack);
+        });
+        generalPopManager.show();
+    }
+
+    importJson_(callBack, errorCallBack) {
+        const fileDialogRequest = new FileDialogRequest();
+        fileDialogRequest.setTitle("Import JSON File");
+        fileDialogRequest.addFileType("JSON File", "*.json");
+        this.selectFile(fileDialogRequest, (filePath) => {
+            const loadingPopManager = new LoadingPopManager();
+            loadingPopManager.clear();
+            loadingPopManager.updateLargeText("Importing JSON...");
+            loadingPopManager.updateText("Please wait...");
+            loadingPopManager.show();
+
+            eel.import_json(filePath)()
+                .then(() => {
+                    eel.get_current_data()()
+                        .then((response) => {
+                            if (response === null) {
+                                alert("Failed to load data");
+                                return;
+                            }
+
+                            // Update the category information
+                            const categoryManager = new CategoryManager();
+                            categoryManager.updateCategoryList(
+                                response["category_info"]
+                            );
+
+                            // Clear all selected masks
+                            const maskSelector = new MaskSelector();
+                            maskSelector.clearSelection();
+
+                            // Clear all prompting masks
+                            const maskCreator = new MaskCreator();
+                            maskCreator.clearPrompts();
+
+                            const data = Data.parseResponse(response);
+                            this.setData(data);
+
+                            this.dataHistoryManager = new HistoryManager(
+                                AnnotationCore.DEFAULT_HISTORY_SIZE
+                            );
+
+                            this.showData();
+                            loadingPopManager.hide();
+                        })
+                        .catch((error) => {
+                            if (errorCallBack != null) {
+                                errorCallBack(error);
+                            } else {
+                                this.popUpError(error);
+                            }
+                        });
+                })
+                .catch((error) => {
+                    if (errorCallBack != null) {
+                        errorCallBack(error);
+                    } else {
+                        this.popUpError(error);
+                    }
+                });
+        });
     }
 }
