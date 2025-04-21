@@ -1,5 +1,6 @@
 import logging
 import eel
+import argparse
 
 from server.server import Server
 from typing import List, Dict, Tuple
@@ -44,6 +45,7 @@ def select_file(request: Dict) -> str:
 def select_save_file(request: Dict) -> str:
     file_dialog_request = FileDialogRequest(request)
     return server.select_save_file(file_dialog_request)
+
 
 @eel.expose
 def create_project(project_create_request: Dict):
@@ -119,6 +121,7 @@ def export_images(output_dir: str):
 def export_annotated_images(output_dir: str, data_list: List[Dict]):
     server.export_annotated_images(output_dir, data_list)
 
+
 @eel.expose
 def export_coco(output_path: str):
     server.export_coco(output_path)
@@ -130,11 +133,24 @@ def import_json(input_path: str):
 
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Start the server.")
+    parser.add_argument(
+        "--mode_type",
+        type=str,
+        choices=["vit_b", "vit_h"],
+        default="vit_b",
+        help="Port number for the server. Default is 0 (random port).",
+    )
+
+    args = parser.parse_args()
+    mode_type = args.mode_type
+
     setup_logging()
     print("Please wait for the tool to be ready ...")
     eel.init("web")
     print(f"About to start the server ...")
-    server = Server()
+    server = Server(model_type=mode_type)
     print(f"Server initialized ...")
     eel.start("main_page.html", size=(1200, 800), port=0)
     print(f"Server started ...")

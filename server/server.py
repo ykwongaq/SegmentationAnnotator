@@ -50,14 +50,32 @@ class Server:
     SAM_DECODER_PATH = "models/vit_h_decoder_quantized.onnx"
     SAM_MODEL_TYPE = "vit_b"
 
-    def __init__(self):
+    def __init__(self, model_type: str = "vit_b"):
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # Embedding Encoder Model
         self.logger.info("Loading embedding encoder model ...")
         start_time = time.time()
-        model_path = get_resource_path(Server.SAM_ENCODER_PATH)
-        self.embeddings_generator = EmbeddingGenerator(model_path)
+        self.model_type = model_type
+        if model_type == "vit_h":
+            self.encoder_model_path = get_resource_path(Server.SAM_ENCODER_PATH)
+            self.decoder_model_path = get_resource_path(Server.SAM_DECODER_PATH)
+        elif model_type == "vit_l":
+            self.encoder_model_path = get_resource_path(
+                os.path.join("models", "vit_l_encoder.onnx")
+            )
+            self.decoder_model_path = get_resource_path(
+                os.path.join("models", "vit_l_decoder.onnx")
+            )
+        elif model_type == "vit_b":
+            self.encoder_model_path = get_resource_path(
+                os.path.join("models", "vit_b_encoder_quantized.onnx")
+            )
+            self.decoder_model_path = get_resource_path(
+                os.path.join("models", "vit_b_decoder_quantized.onnx")
+            )
+
+        self.embeddings_generator = EmbeddingGenerator(self.encoder_model_path)
         self.logger.info(
             f"Embedding model loaded in {time.time() - start_time} seconds"
         )
@@ -65,8 +83,7 @@ class Server:
         # Mask Editor
         self.logger.info("Mask Editor initialized ...")
         start_time = time.time()
-        model_path = get_resource_path(Server.SAM_DECODER_PATH)
-        self.mask_creator = MaskCreator(model_path)
+        self.mask_creator = MaskCreator(self.decoder_model_path)
         self.logger.info(
             f"Mask Creator initialized in {time.time() - start_time} seconds"
         )
