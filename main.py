@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Start the server.")
     parser.add_argument(
-        "--mode_type",
+        "--model_type",
         type=str,
         choices=["vit_b", "vit_h"],
         default="vit_b",

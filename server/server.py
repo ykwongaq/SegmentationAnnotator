@@ -45,11 +45,6 @@ class Server:
     This class handle all the requests from teh client sides
     """
 
-    # Embedding models
-    SAM_ENCODER_PATH = "models/vit_h_encoder_quantized.onnx"
-    SAM_DECODER_PATH = "models/vit_h_decoder_quantized.onnx"
-    SAM_MODEL_TYPE = "vit_b"
-
     def __init__(self, model_type: str = "vit_b"):
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -58,14 +53,11 @@ class Server:
         start_time = time.time()
         self.model_type = model_type
         if model_type == "vit_h":
-            self.encoder_model_path = get_resource_path(Server.SAM_ENCODER_PATH)
-            self.decoder_model_path = get_resource_path(Server.SAM_DECODER_PATH)
-        elif model_type == "vit_l":
             self.encoder_model_path = get_resource_path(
-                os.path.join("models", "vit_l_encoder.onnx")
+                os.path.join("models", "vit_h_encoder_quantized.onnx")
             )
             self.decoder_model_path = get_resource_path(
-                os.path.join("models", "vit_l_decoder.onnx")
+                os.path.join("models", "vit_h_decoder_quantized.onnx")
             )
         elif model_type == "vit_b":
             self.encoder_model_path = get_resource_path(
@@ -73,6 +65,10 @@ class Server:
             )
             self.decoder_model_path = get_resource_path(
                 os.path.join("models", "vit_b_decoder_quantized.onnx")
+            )
+        else:
+            raise ValueError(
+                f"Unsupported model type: {model_type}. Supported types are 'vit_b' and 'vit_h'."
             )
 
         self.embeddings_generator = EmbeddingGenerator(self.encoder_model_path)
