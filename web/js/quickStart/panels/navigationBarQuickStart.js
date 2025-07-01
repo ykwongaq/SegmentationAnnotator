@@ -11,7 +11,7 @@ export class NavigationBarQuickStart extends NavigationBar {
         this.dom = dom;
 
         this.labelButton = this.dom.querySelector("#label-button");
-        this.importJsonButton = this.dom.querySelector("#import-json-button");
+        // this.importJsonButton = this.dom.querySelector("#import-json-button");
 
         this.exportButton = this.dom.querySelector("#file-button");
         this.exportDropDownMenu = this.dom.querySelector("#file-dropdown-menu");
@@ -39,7 +39,7 @@ export class NavigationBarQuickStart extends NavigationBar {
         super.init();
         this.initLabelButton();
         this.initExportButton();
-        this.initImportJsonButton();
+        // this.initImportJsonButton();
         this.initSave();
     }
 
@@ -49,13 +49,13 @@ export class NavigationBarQuickStart extends NavigationBar {
         });
     }
 
-    initImportJsonButton() {
-        this.importJsonButton.addEventListener("click", () => {
-            const manager = new Manager();
-            const core = manager.getCore();
-            core.importJson();
-        });
-    }
+    // initImportJsonButton() {
+    //     this.importJsonButton.addEventListener("click", () => {
+    //         const manager = new Manager();
+    //         const core = manager.getCore();
+    //         core.importJson();
+    //     });
+    // }
 
     initExportButton() {
         this.exportButton.addEventListener("click", () => {

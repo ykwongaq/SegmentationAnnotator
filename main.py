@@ -144,13 +144,13 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    mode_type = args.mode_type
+    model_type = args.model_type
 
     setup_logging()
     print("Please wait for the tool to be ready ...")
     eel.init("web")
     print(f"About to start the server ...")
-    server = Server(model_type=mode_type)
+    server = Server(model_type=model_type)
     print(f"Server initialized ...")
     eel.start("main_page.html", size=(1200, 800), port=0)
     print(f"Server started ...")
