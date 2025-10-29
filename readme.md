@@ -9,7 +9,7 @@ Install `Anaconda` from this link `https://www.anaconda.com/download`
 Launch anaconda and create `Python` Environment by executing the following command
 
 ```
-conda create -n sat python=3.8
+conda create -n sat python=3.10
 ```
 
 Then activate it by
